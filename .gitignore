@@ -1,0 +1,52 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# OS
+.DS_Store
+
+# Virtual environments
+venv/
+env/
+.env/
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
+
+# Project specific
+nx_graphs/
+ogb_dataset/
+
+# Data files
+*.pkl
+*.csv
+*.gpickle
+*.xlsx
+*.pt
+*.txt
+!requirements.txt
+~$*
+*~
+
+# LaTeX
+*.sty
+*.tex
+*.bst
+*.bib
+
+# Other
+*.xml
+*.iml
+*.pdf
+*.png
