@@ -28,6 +28,42 @@ def ensure_dir(path: str) -> None:
 
 
 # -----------------------------
+# Dataset download / checking
+# -----------------------------
+def ensure_dataset_downloaded(dataset_name: str, verbose: bool = True) -> str:
+    """
+    Ensure a TU dataset is downloaded, downloading if necessary.
+
+    Args:
+        dataset_name: Name of the TU dataset
+        verbose: Print status messages
+
+    Returns:
+        Path to the dataset's raw directory
+    """
+    import os.path as osp
+    from torch_geometric.datasets import TUDataset
+
+    base_path = osp.join(
+        osp.dirname(osp.realpath(__file__)),
+        'tudataset', 'tud_benchmark', 'datasets', dataset_name
+    )
+    raw_path = osp.join(base_path, dataset_name, 'raw')
+
+    if osp.exists(raw_path):
+        if verbose:
+            print(f"Dataset '{dataset_name}' already exists at {raw_path}")
+    else:
+        if verbose:
+            print(f"Downloading dataset '{dataset_name}'...")
+        TUDataset(base_path, name=dataset_name)
+        if verbose:
+            print(f"Dataset '{dataset_name}' downloaded to {raw_path}")
+
+    return raw_path
+
+
+# -----------------------------
 # Dataset conversion / loading
 # -----------------------------
 def convert_to_networkx(dataset_name: Optional[str] = None, path_to_dataset: Optional[str] = None) -> List[nx.Graph]:
@@ -65,6 +101,7 @@ def load_or_build_nx_graphs(dataset_name: str, dataset_path: str, nx_graphs_dir:
     Load NetworkX graphs from cache or build from TU dataset.
 
     Graphs are cached as pickle files for faster subsequent loading.
+    Automatically downloads the dataset if not already present.
 
     Args:
         dataset_name: Name of the TU dataset
@@ -74,6 +111,9 @@ def load_or_build_nx_graphs(dataset_name: str, dataset_path: str, nx_graphs_dir:
     Returns:
         List of NetworkX Graph objects
     """
+    # Ensure dataset is downloaded first
+    ensure_dataset_downloaded(dataset_name, verbose=True)
+
     ensure_dir(nx_graphs_dir)
     nx_graphs_file = os.path.join(nx_graphs_dir, f"{dataset_name}_nx_graphs.pkl")
     if os.path.exists(nx_graphs_file):
