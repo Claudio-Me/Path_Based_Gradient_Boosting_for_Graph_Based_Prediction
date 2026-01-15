@@ -1,4 +1,5 @@
 import os.path as osp
+import time
 
 import numpy as np
 import torch
@@ -161,6 +162,9 @@ def gnn_evaluation(gnn, ds_name, layers, hidden, max_num_epochs=200, batch_size=
         'roc_auc': {'best_scores': [], 'fold_scores': []},
     }
 
+    # Timing tracking for training time per hyperparameter config
+    config_times = []
+
     for i in range(num_repetitions):
         seed_i = (cv_seed + i) if cv_seed is not None else None
         kf = KFold(n_splits=10, shuffle=True, random_state=seed_i)
@@ -188,6 +192,8 @@ def gnn_evaluation(gnn, ds_name, layers, hidden, max_num_epochs=200, batch_size=
             # Collect val. and test acc. over all hyperparameter combinations.
             for l in layers:
                 for h in hidden:
+                    config_start = time.time()
+
                     # Setup model.
                     model = gnn(dataset, l, h).to(device)
                     model.reset_parameters()
@@ -210,6 +216,8 @@ def gnn_evaluation(gnn, ds_name, layers, hidden, max_num_epochs=200, batch_size=
                         # Break if learning rate is smaller 10**-6.
                         if lr < min_lr:
                             break
+
+                    config_times.append(time.time() - config_start)
 
             # Store metrics for this fold
             if best_fold_metrics:
@@ -236,5 +244,11 @@ def gnn_evaluation(gnn, ds_name, layers, hidden, max_num_epochs=200, batch_size=
         std_10 = float(best_scores.std(ddof=1)) if best_scores.size > 1 else 0.0
         std_100 = float(fold_scores.std(ddof=1)) if fold_scores.size > 1 else 0.0
         results_dict[m] = (mean_score, std_10, std_100)
+
+    # Calculate timing statistics (time per config)
+    if config_times:
+        results_dict['_timing'] = (np.mean(config_times), np.std(config_times, ddof=1) if len(config_times) > 1 else 0.0)
+    else:
+        results_dict['_timing'] = (None, None)
 
     return results_dict

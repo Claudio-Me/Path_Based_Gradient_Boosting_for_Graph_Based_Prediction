@@ -117,10 +117,10 @@ def pathboost_evaluation_with_auc(
     # Default grid if none provided
     if param_grid is None:
         param_grid = {
-            'learning_rate': [0.1, 0.02, 0.01],
-            'max_path_length': [3, 4, 6],
-            'kwargs_for_base_learner': [{'max_depth': 3}, {'max_depth': 4}],
-            'n_iter': [500, 1000, 1500]
+            'learning_rate': [0.1, 0.02],
+            'max_path_length': [3, 5],
+            'kwargs_for_base_learner': [ {'max_depth': 4}],
+            'n_iter': [500,  1500, 2000]
         }
 
     # Custom scorer for ROC-AUC that handles predict_proba
@@ -151,6 +151,9 @@ def pathboost_evaluation_with_auc(
         'recall': {'best_scores': [], 'fold_scores': []},
         'roc_auc': {'best_scores': [], 'fold_scores': []},
     }
+
+    # Timing tracking for training time per hyperparameter config
+    timing_results = {'fit_times': [], 'fit_time_stds': []}
 
     # Define scoring dict
     scoring = {
@@ -191,6 +194,10 @@ def pathboost_evaluation_with_auc(
 
             best_index = grid.best_index_
 
+            # Collect timing for best config
+            timing_results['fit_times'].append(grid.cv_results_['mean_fit_time'][best_index])
+            timing_results['fit_time_stds'].append(grid.cv_results_['std_fit_time'][best_index])
+
             # Collect scores for all metrics
             for metric in all_metrics_results.keys():
                 best_score = grid.cv_results_[f'mean_test_{metric}'][best_index]
@@ -217,6 +224,14 @@ def pathboost_evaluation_with_auc(
             std_all100 = np.std(fold_scores, ddof=1) if len(fold_scores) > 1 else 0.0
 
             results_dict[metric] = (mean_score, std_top10, std_all100)
+
+        # Calculate timing statistics (time per config)
+        if timing_results['fit_times']:
+            time_mean = np.mean(timing_results['fit_times'])
+            time_std = np.mean(timing_results['fit_time_stds'])
+        else:
+            time_mean, time_std = None, None
+        results_dict['_timing'] = (time_mean, time_std)
 
         return results_dict
 
@@ -275,7 +290,8 @@ def main():
                 logger.error(f"{dataset_name}: {error}")
                 csv_writer.write_failure(dataset_name, PATHBOOST_METRICS, "FAILED")
             elif result:
-                csv_writer.write_results(dataset_name, result)
+                timing_data = result.pop('_timing', None)
+                csv_writer.write_results(dataset_name, result, timing_data=timing_data)
                 # Log summary
                 if 'accuracy' in result:
                     acc, s10, s100 = result['accuracy']

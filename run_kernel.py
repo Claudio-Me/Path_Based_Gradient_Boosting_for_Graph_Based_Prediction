@@ -16,6 +16,7 @@ Output:
 """
 import os
 import sys
+import time
 
 from shared import (
     create_argument_parser,
@@ -154,25 +155,27 @@ def run_all_kernels(dataset_name: str, timeout_per_kernel: int = 10286) -> dict:
     for kernel_name, kernel_func in KERNEL_FUNCS:
         print(f"  Running {kernel_name}...")
 
+        start_time = time.time()
         result, timed_out, error = run_with_timeout(
             kernel_func,
             args=(dataset_name, num_reps, use_labels, has_edge_labels),
             timeout_sec=timeout_per_kernel
         )
+        elapsed_time = time.time() - start_time
 
         if timed_out:
             print(f"  {kernel_name}: TIMEOUT")
-            results[kernel_name] = ("TIMEOUT", "TIMEOUT", "TIMEOUT")
+            results[kernel_name] = ("TIMEOUT", "TIMEOUT", "TIMEOUT", None)
         elif error:
             print(f"  {kernel_name}: FAILED - {error}")
-            results[kernel_name] = ("FAILED", "FAILED", "FAILED")
+            results[kernel_name] = ("FAILED", "FAILED", "FAILED", None)
         elif result is None:
             print(f"  {kernel_name}: No result")
-            results[kernel_name] = ("FAILED", "FAILED", "FAILED")
+            results[kernel_name] = ("FAILED", "FAILED", "FAILED", None)
         else:
-            # result is (accuracy, std_10, std_100)
-            print(f"  {kernel_name}: accuracy={result[0]:.4f}")
-            results[kernel_name] = result
+            # result is (accuracy, std_10, std_100), add elapsed_time
+            print(f"  {kernel_name}: accuracy={result[0]:.4f} (time={elapsed_time:.2f}s)")
+            results[kernel_name] = (*result, elapsed_time)
 
     return results
 
@@ -207,12 +210,15 @@ def main():
             results = run_all_kernels(dataset_name, timeout_per_kernel)
 
             # Write results - one row per kernel method
-            for kernel_name, (acc, std10, std100) in results.items():
+            for kernel_name, result_tuple in results.items():
+                acc, std10, std100, elapsed_time = result_tuple
                 metric_name = f"accuracy_{kernel_name}"
                 if isinstance(acc, str):  # "FAILED" or "TIMEOUT"
                     csv_writer.write_failure(dataset_name, [metric_name], acc)
                 else:
-                    csv_writer.write_results(dataset_name, {metric_name: (acc, std10, std100)})
+                    # elapsed_time is total time for this kernel (single config)
+                    timing_data = (elapsed_time, 0.0) if elapsed_time is not None else None
+                    csv_writer.write_results(dataset_name, {metric_name: (acc, std10, std100)}, timing_data=timing_data)
 
             logger.info(f"{dataset_name}: completed all kernels")
 

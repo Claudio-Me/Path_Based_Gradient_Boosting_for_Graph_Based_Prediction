@@ -2,7 +2,7 @@
 import csv
 import os
 from datetime import datetime
-from typing import Dict, List, Union
+from typing import Dict, List, Optional, Union
 
 
 def get_timestamped_path(output_dir: str, prefix: str) -> str:
@@ -37,7 +37,7 @@ class ResultsCSVWriter:
     easy to analyze and compare metrics across datasets.
     """
 
-    FIELDNAMES = ['Dataset', 'Metric', 'Mean', 'Std_Top10', 'Std_All100']
+    FIELDNAMES = ['Dataset', 'Metric', 'Mean', 'Std_Top10', 'Std_All100', 'Training_Time_Mean', 'Training_Time_Std']
 
     def __init__(self, csv_path: str):
         """
@@ -59,6 +59,7 @@ class ResultsCSVWriter:
         self,
         dataset: str,
         results: Dict[str, tuple],
+        timing_data: Optional[tuple] = None,
     ):
         """
         Write results for a dataset.
@@ -66,13 +67,15 @@ class ResultsCSVWriter:
         Args:
             dataset: Dataset name
             results: Dict mapping metric name to (mean, std_top10, std_all100) tuple
+            timing_data: Optional tuple of (time_mean, time_std) for training time per config
 
         Example:
             writer.write_results("MUTAG", {
                 "accuracy": (0.857, 0.012, 0.034),
                 "f1_macro": (0.849, 0.013, 0.035),
-            })
+            }, timing_data=(2.34, 0.12))
         """
+        time_mean, time_std = timing_data if timing_data else (None, None)
         with open(self.csv_path, 'a', newline='') as f:
             writer = csv.DictWriter(f, fieldnames=self.FIELDNAMES)
             for metric, values in results.items():
@@ -83,6 +86,8 @@ class ResultsCSVWriter:
                     'Mean': f'{mean:.6f}' if isinstance(mean, (int, float)) else mean,
                     'Std_Top10': f'{std_top10:.6f}' if isinstance(std_top10, (int, float)) else std_top10,
                     'Std_All100': f'{std_all100:.6f}' if isinstance(std_all100, (int, float)) else std_all100,
+                    'Training_Time_Mean': f'{time_mean:.4f}' if time_mean is not None else 'N/A',
+                    'Training_Time_Std': f'{time_std:.4f}' if time_std is not None else 'N/A',
                 })
 
     def write_failure(self, dataset: str, metrics: List[str], reason: str = "FAILED"):
@@ -106,4 +111,6 @@ class ResultsCSVWriter:
                     'Mean': reason,
                     'Std_Top10': reason,
                     'Std_All100': reason,
+                    'Training_Time_Mean': reason,
+                    'Training_Time_Std': reason,
                 })

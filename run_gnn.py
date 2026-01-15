@@ -131,7 +131,8 @@ def main():
                 logger.error(f"{dataset_name}: {error}")
                 csv_writer.write_failure(dataset_name, GNN_METRICS, "FAILED")
             elif result:
-                csv_writer.write_results(dataset_name, result)
+                timing_data = result.pop('_timing', None)
+                csv_writer.write_results(dataset_name, result, timing_data=timing_data)
                 # Log summary
                 if 'accuracy' in result:
                     acc, s10, s100 = result['accuracy']
