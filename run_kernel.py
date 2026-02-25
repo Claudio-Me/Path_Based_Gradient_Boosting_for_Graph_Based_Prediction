@@ -216,8 +216,10 @@ def main():
                 if isinstance(acc, str):  # "FAILED" or "TIMEOUT"
                     csv_writer.write_failure(dataset_name, [metric_name], acc)
                 else:
-                    # elapsed_time is total time for this kernel (single config)
-                    timing_data = (elapsed_time, 0.0) if elapsed_time is not None else None
+                    # Divide total elapsed time by number of folds (10 reps × 10 folds = 100)
+                    # to get per-fold time, consistent with PathBoost and GNN reporting
+                    n_folds = num_reps * 10
+                    timing_data = (elapsed_time / n_folds, 0.0) if elapsed_time is not None else None
                     csv_writer.write_results(dataset_name, {metric_name: (acc, std10, std100)}, timing_data=timing_data)
 
             logger.info(f"{dataset_name}: completed all kernels")

@@ -44,7 +44,7 @@ def train_pathboost_cv(train_graphs, train_labels, test_graphs, test_labels, n_f
 
     # Base model
     model = SequentialPathBoostClassifier(
-        n_iter=500,
+        n_iter=2000,
         learning_rate=0.1,
         BaseLearnerClass=DecisionTreeRegressor,
         SelectorClass=DecisionTreeClassifier,
@@ -52,11 +52,16 @@ def train_pathboost_cv(train_graphs, train_labels, test_graphs, test_labels, n_f
         verbose=False
     )
 
-    # Parameter grid (small for speed)
+    # Parameter grid
     param_grid = {
-        'learning_rate': [0.1],
-        'max_path_length': [3],
-        'n_iter': [500]
+        'learning_rate': [0.05, 0.1],
+        'max_path_length': [2, 3, 4],
+        'n_iter': [100,500, 1000,],
+        'kwargs_for_base_learner': [
+            {'random_state': seed, 'max_depth': 3},
+            {'random_state': seed, 'max_depth': 4},
+            {'random_state': seed, 'max_depth': 5},
+        ]
     }
 
     # GridSearchCV
@@ -295,3 +300,62 @@ def _normalized_degree_transform(data, mean, std):
     deg = (deg - mean) / std
     data.x = deg.view(-1, 1)
     return data
+
+
+def run_pathboost_evaluation(dataset_name, n_splits=4, n_folds=5, seed=CV_SEED):
+    """
+    Evaluate PathBoost on subsampled training data.
+
+    Args:
+        dataset_name: Name of TU dataset (e.g., 'PROTEINS_full')
+        n_splits: Number of train/test splits
+        n_folds: CV folds for hyperparameter search
+        seed: Random seed
+
+    Returns: {10: [acc_split0, acc_split1, ...], 20: [...], ..., 100: [...]}
+    """
+    from splitter import create_dataset_splits, subsample_train
+
+    splits, _, _ = create_dataset_splits(dataset_name, n_splits)
+    results = {p: [] for p in range(10, 101, 10)}
+
+    for split in splits:
+        subsamples = subsample_train(split['train_graphs'], split['train_labels'], seed)
+
+        for sub in subsamples:
+            acc = train_pathboost_cv(sub['graphs'], sub['labels'],
+                                     split['test_graphs'], split['test_labels'],
+                                     n_folds=n_folds, seed=seed)
+            results[sub['percentage']].append(acc)
+
+    return results
+
+
+def run_gin_evaluation(dataset_name, n_splits=4, n_folds=5, seed=CV_SEED, device='cpu'):
+    """
+    Evaluate GIN on subsampled training data.
+
+    Args:
+        dataset_name: Name of TU dataset (e.g., 'PROTEINS_full')
+        n_splits: Number of train/test splits
+        n_folds: CV folds for hyperparameter search
+        seed: Random seed
+        device: Device for GIN ('cpu' or 'cuda')
+
+    Returns: {10: [acc_split0, acc_split1, ...], 20: [...], ..., 100: [...]}
+    """
+    from splitter import create_dataset_splits, subsample_train
+
+    splits, _, _ = create_dataset_splits(dataset_name, n_splits)
+    results = {p: [] for p in range(10, 101, 10)}
+
+    for split in splits:
+        subsamples = subsample_train(split['train_graphs'], split['train_labels'], seed)
+
+        for sub in subsamples:
+            acc = train_gin_cv(sub['graphs'], sub['labels'],
+                               split['test_graphs'], split['test_labels'],
+                               n_folds=n_folds, seed=seed, device=device)
+            results[sub['percentage']].append(acc)
+
+    return results

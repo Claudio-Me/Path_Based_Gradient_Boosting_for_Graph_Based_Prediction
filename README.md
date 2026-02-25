@@ -190,6 +190,40 @@ The codebase includes 80+ TU Benchmark datasets:
 
 **Social:** IMDB-BINARY, IMDB-MULTI, REDDIT-*, COLLAB, etc.
 
+## Results Analysis
+
+The `results_csv_files/` directory contains tools for analyzing and visualizing benchmark results.
+
+### Analysis Notebook
+
+`results_csv_files/analysis_csv_results.ipynb` provides:
+- Comparison of PathBoost vs GNN vs Graph Kernels
+- Win/loss summary tables
+- Correlation analysis (dataset features vs performance)
+- Scatter plots and bar charts
+
+**Dependencies:**
+```bash
+pip install itables seaborn scipy
+```
+
+### Exporting to HTML
+
+Export the notebook as an interactive HTML report (tables are sortable/searchable):
+
+```bash
+# Export with code cells hidden (report style)
+jupyter nbconvert --to html --no-input results_csv_files/analysis_csv_results.ipynb
+
+# Export with code visible
+jupyter nbconvert --to html results_csv_files/analysis_csv_results.ipynb
+
+# Custom output filename
+jupyter nbconvert --to html --no-input --output report.html results_csv_files/analysis_csv_results.ipynb
+```
+
+The exported HTML includes interactive DataTables powered by `itables` - you can sort columns, search, and paginate results directly in the browser.
+
 ## Configuration
 
 Key constants in `shared/constants.py`:

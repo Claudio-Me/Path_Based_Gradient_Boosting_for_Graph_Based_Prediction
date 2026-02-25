@@ -35,7 +35,9 @@ def create_dataset_splits(dataset_name, n_splits, test_size=0.1, base_seed=CV_SE
     nx_graphs = load_or_build_nx_graphs(dataset_name, dataset_path, NX_GRAPHS_DIR)
     labels = np.array(get_dataset(dataset_name, regression=False)).flatten()
 
-    graphs_array = np.array(nx_graphs, dtype=object)
+    # Use np.empty to avoid NetworkX graphs being converted to arrays
+    graphs_array = np.empty(len(nx_graphs), dtype=object)
+    graphs_array[:] = nx_graphs
     indices = np.arange(len(nx_graphs))
 
     splits = []
@@ -71,7 +73,9 @@ def subsample_train(train_graphs, train_labels, seed=CV_SEED):
     """
     rng = np.random.default_rng(seed)
     n = len(train_graphs)
-    graphs_array = np.array(train_graphs, dtype=object)
+    # Use np.empty to avoid NetworkX graphs being converted to arrays
+    graphs_array = np.empty(n, dtype=object)
+    graphs_array[:] = train_graphs
     labels_array = np.array(train_labels)
 
     # Shuffle indices once
