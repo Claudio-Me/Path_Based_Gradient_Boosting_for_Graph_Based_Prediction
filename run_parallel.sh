@@ -27,7 +27,7 @@ set -e
 
 # Default values
 JOBS=4
-TIMEOUT=144000
+TIMEOUT=0
 DEVICE="gpu"
 DRY_RUN=false
 DATASETS=""

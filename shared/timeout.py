@@ -44,7 +44,8 @@ def run_with_timeout(
     q = Queue()
     p = Process(target=_run_in_process, args=(q, func, args, kwargs or {}))
     p.start()
-    p.join(timeout_sec)
+    # timeout_sec=0 means no timeout (wait indefinitely)
+    p.join(timeout_sec if timeout_sec else None)
 
     if p.is_alive():
         # Process exceeded timeout - terminate it
