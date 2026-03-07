@@ -42,7 +42,7 @@ KERNEL_METHODS = [
 
 # All available datasets (from tudataset)
 ALL_DATASETS = [
-    "AIDS", "BZR", "BZR_MD", "COLLAB", "COX2", "COX2_MD", "DBLP_v1", "DD",
+    "AIDS", "BZR", "BZR_MD", "COLLAB", "COX2", "COX2_MD", "DD",
     "DHFR", "DHFR_MD", "ENZYMES", "ER_MD", "IMDB-BINARY", "IMDB-MULTI", "KKI",
     "MCF-7", "MCF-7H", "MOLT-4", "MOLT-4H", "MUTAG", "Mutagenicity",
     "NCI-H23", "NCI-H23H", "NCI1", "NCI109", "OHSU", "OVCAR-8", "OVCAR-8H",
