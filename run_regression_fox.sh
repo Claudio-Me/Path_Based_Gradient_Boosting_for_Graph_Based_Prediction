@@ -13,6 +13,6 @@ set -e
 mkdir -p logs
 
 cd $SLURM_SUBMIT_DIR
-source venv/bin/activate
+source .different_datasets_venv/bin/activate
 
 ./run_parallel_regression.sh -j 7
