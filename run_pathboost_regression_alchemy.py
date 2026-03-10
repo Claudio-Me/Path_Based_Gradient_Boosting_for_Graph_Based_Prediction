@@ -1,14 +1,19 @@
 #!/usr/bin/env python3
 """
-Sequential PathBoost regression evaluation on alchemy_full dataset.
+Sequential PathBoost regression evaluation on regression datasets.
 
-Runs two side-by-side experiments with 10×10 fold cross-validation:
+Runs two side-by-side experiments per dataset with 10×10 fold cross-validation:
   1. Full: Use all node attributes as-is
   2. Categorical-only: Strip all node attributes except the single categorical
      attribute used for anchor node selection (ablation study)
 
+Usage:
+    python run_pathboost_regression_alchemy.py alchemy_full
+    python run_pathboost_regression_alchemy.py aspirin benzene toluene
+    python run_pathboost_regression_alchemy.py  # runs all regression datasets
+
 Output:
-    PathBoost_results/Sequential_PathBoost_Regression_Alchemy_Performance_<timestamp>.csv
+    PathBoost_results/Sequential_PathBoost_Regression_Performance_<timestamp>.csv
 """
 import os
 import sys
@@ -39,7 +44,21 @@ TARGET_INDEX = 0
 
 REGRESSION_METRICS = ['mae', 'mse', 'r2']
 
-DATASET_NAME = "alchemy_full"
+ALL_REGRESSION_DATASETS = [
+    "alchemy_full",
+    "aspirin",
+    "benzene",
+    "ethanol",
+    "malonaldehyde",
+    "naphthalene",
+    "salicylic_acid",
+    "toluene",
+    "uracil",
+    "ZINC_full",
+    "ZINC_test",
+    "ZINC_train",
+    "ZINC_val",
+]
 
 
 # ---------------------------------------------------------------------------
@@ -230,48 +249,31 @@ def pathboost_regression_evaluation(
 # Main
 # ---------------------------------------------------------------------------
 
-def main():
-    parser = argparse.ArgumentParser(
-        description="PathBoost regression on alchemy_full (full vs categorical-only)"
-    )
-    parser.add_argument(
-        '--timeout', type=int, default=DEFAULT_TIMEOUT,
-        help=f"Timeout per experiment in seconds (default: {DEFAULT_TIMEOUT})"
-    )
-    parser.add_argument(
-        '--quick', action='store_true',
-        help="Quick mode: 2×2 CV instead of 10×10 (for testing)"
-    )
-    parser.add_argument(
-        '-v', '--verbose', action='store_true',
-        help="Verbose logging"
-    )
-    args = parser.parse_args()
-
-    logger = setup_logging('pathboost_alchemy', args.verbose)
-
-    n_repeats = 2 if args.quick else 10
-    n_folds = 2 if args.quick else 10
-    if args.quick:
-        logger.info("Quick mode: using 2×2 CV")
+def run_dataset(dataset_name, csv_writer, logger, args, n_repeats, n_folds):
+    """Run both experiments (full + categorical-only) for a single dataset."""
+    base_dir = get_base_dir()
 
     # ------------------------------------------------------------------
-    # Step 1: Load targets
+    # Load targets
     # ------------------------------------------------------------------
-    logger.info(f"Loading targets for {DATASET_NAME}...")
-    targets = get_dataset(DATASET_NAME, multi_target_regression=True)
+    logger.info(f"Loading targets for {dataset_name}...")
+    try:
+        targets = get_dataset(dataset_name, multi_target_regression=True)
+    except Exception:
+        # Some datasets use single-target regression
+        targets = get_dataset(dataset_name, regression=True)
     targets = np.array(targets)
 
     if targets.ndim == 1:
         n_graphs = len(targets)
         n_targets = 1
-        labels = targets
+        labels = targets.astype(float)
     else:
         n_graphs, n_targets = targets.shape
-        labels = targets[:, TARGET_INDEX]
+        labels = targets[:, TARGET_INDEX].astype(float)
 
     print(
-        f"{DATASET_NAME} has {n_graphs} graphs, {n_targets} target(s). "
+        f"{dataset_name} has {n_graphs} graphs, {n_targets} target(s). "
         f"Using target index {TARGET_INDEX}."
     )
     logger.info(
@@ -280,21 +282,22 @@ def main():
     )
 
     # ------------------------------------------------------------------
-    # Step 2: Load NetworkX graphs
+    # Load NetworkX graphs
     # ------------------------------------------------------------------
-    base_dir = get_base_dir()
-    dataset_path = os.path.join(base_dir, DATASET_NAME)
-    logger.info(f"Loading NetworkX graphs for {DATASET_NAME}...")
-    nx_graphs = load_or_build_nx_graphs(DATASET_NAME, dataset_path, NX_GRAPHS_DIR)
+    dataset_path = os.path.join(base_dir, dataset_name)
+    logger.info(f"Loading NetworkX graphs for {dataset_name}...")
+    nx_graphs = load_or_build_nx_graphs(dataset_name, dataset_path, NX_GRAPHS_DIR)
     logger.info(f"Loaded {len(nx_graphs)} graphs.")
 
     # ------------------------------------------------------------------
-    # Step 3: Find categorical attribute & anchor labels
+    # Find categorical attribute & anchor labels
     # ------------------------------------------------------------------
     categorical_attr = find_categorical_node_attributes(nx_graphs)
     if not categorical_attr:
-        logger.error("No categorical node attribute found. Cannot run PathBoost.")
-        sys.exit(1)
+        logger.warning(f"{dataset_name}: No categorical node attribute found. Skipping.")
+        csv_writer.write_failure(f"{dataset_name}_full", REGRESSION_METRICS, "FAILED")
+        csv_writer.write_failure(f"{dataset_name}_categorical_only", REGRESSION_METRICS, "FAILED")
+        return
 
     anchor_labels = set()
     for g in nx_graphs:
@@ -304,23 +307,15 @@ def main():
     anchor_labels = list(anchor_labels)
 
     if len(anchor_labels) < 2:
-        logger.error("Not enough distinct anchor labels. Cannot run PathBoost.")
-        sys.exit(1)
+        logger.warning(f"{dataset_name}: Not enough distinct anchor labels. Skipping.")
+        csv_writer.write_failure(f"{dataset_name}_full", REGRESSION_METRICS, "FAILED")
+        csv_writer.write_failure(f"{dataset_name}_categorical_only", REGRESSION_METRICS, "FAILED")
+        return
 
     print(
         f"Categorical attribute: '{categorical_attr}' "
         f"({len(anchor_labels)} distinct anchor labels)"
     )
-
-    # ------------------------------------------------------------------
-    # Output CSV
-    # ------------------------------------------------------------------
-    csv_path = get_timestamped_path(
-        'PathBoost_results',
-        'Sequential_PathBoost_Regression_Alchemy'
-    )
-    csv_writer = ResultsCSVWriter(csv_path)
-    logger.info(f"Results will be saved to: {csv_path}")
 
     eval_kwargs = dict(
         categorical_attr=categorical_attr,
@@ -333,7 +328,7 @@ def main():
     # ------------------------------------------------------------------
     # Experiment 1: Full attributes
     # ------------------------------------------------------------------
-    exp1_name = f"{DATASET_NAME}_full"
+    exp1_name = f"{dataset_name}_full"
     logger.info(f"=== Experiment 1: {exp1_name} ===")
 
     result1, timed_out1, error1 = run_with_timeout(
@@ -362,7 +357,7 @@ def main():
     # ------------------------------------------------------------------
     # Experiment 2: Categorical-only (ablation)
     # ------------------------------------------------------------------
-    exp2_name = f"{DATASET_NAME}_categorical_only"
+    exp2_name = f"{dataset_name}_categorical_only"
     logger.info(f"=== Experiment 2: {exp2_name} ===")
     logger.info(f"Stripping all node attributes except '{categorical_attr}'...")
 
@@ -390,6 +385,62 @@ def main():
     else:
         logger.warning(f"{exp2_name}: No results returned")
         csv_writer.write_failure(exp2_name, REGRESSION_METRICS, "FAILED")
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description="PathBoost regression evaluation (full vs categorical-only)"
+    )
+    parser.add_argument(
+        'datasets', nargs='*', default=None,
+        help="Dataset names to evaluate (default: all regression datasets)"
+    )
+    parser.add_argument(
+        '--timeout', type=int, default=DEFAULT_TIMEOUT,
+        help=f"Timeout per experiment in seconds (default: {DEFAULT_TIMEOUT})"
+    )
+    parser.add_argument(
+        '--quick', action='store_true',
+        help="Quick mode: 2x2 CV instead of 10x10 (for testing)"
+    )
+    parser.add_argument(
+        '-v', '--verbose', action='store_true',
+        help="Verbose logging"
+    )
+    args = parser.parse_args()
+
+    logger = setup_logging('pathboost_regression', args.verbose)
+
+    datasets = args.datasets if args.datasets else ALL_REGRESSION_DATASETS
+
+    n_repeats = 2 if args.quick else 10
+    n_folds = 2 if args.quick else 10
+    if args.quick:
+        logger.info("Quick mode: using 2x2 CV")
+
+    logger.info(f"Processing {len(datasets)} dataset(s): {', '.join(datasets)}")
+    logger.info(f"Timeout per experiment: {args.timeout}s ({args.timeout/3600:.1f}h)")
+
+    # ------------------------------------------------------------------
+    # Output CSV
+    # ------------------------------------------------------------------
+    csv_path = get_timestamped_path(
+        'PathBoost_results',
+        'Sequential_PathBoost_Regression'
+    )
+    csv_writer = ResultsCSVWriter(csv_path)
+    logger.info(f"Results will be saved to: {csv_path}")
+
+    for dataset_name in datasets:
+        logger.info(f"{'='*60}")
+        logger.info(f"Processing {dataset_name}...")
+        logger.info(f"{'='*60}")
+        try:
+            run_dataset(dataset_name, csv_writer, logger, args, n_repeats, n_folds)
+        except Exception as e:
+            logger.error(f"{dataset_name}: {e}")
+            csv_writer.write_failure(f"{dataset_name}_full", REGRESSION_METRICS, "FAILED")
+            csv_writer.write_failure(f"{dataset_name}_categorical_only", REGRESSION_METRICS, "FAILED")
 
     logger.info(f"All done. Results saved to: {csv_path}")
 
