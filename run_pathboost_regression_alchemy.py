@@ -18,6 +18,7 @@ Output:
 import os
 import sys
 import argparse
+import traceback
 import numpy as np
 from typing import Dict, List, Optional
 
@@ -438,7 +439,8 @@ def main():
         try:
             run_dataset(dataset_name, csv_writer, logger, args, n_repeats, n_folds)
         except Exception as e:
-            logger.error(f"{dataset_name}: {e}")
+            logger.error(f"{dataset_name}: {type(e).__name__}: {e}")
+            logger.error(traceback.format_exc())
             csv_writer.write_failure(f"{dataset_name}_full", REGRESSION_METRICS, "FAILED")
             csv_writer.write_failure(f"{dataset_name}_categorical_only", REGRESSION_METRICS, "FAILED")
 
