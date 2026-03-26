@@ -13,6 +13,7 @@
 # Options:
 #   -j, --jobs N        Number of parallel jobs (default: 4)
 #   -t, --timeout N     Timeout per experiment in seconds (default: 0 = no limit)
+#   -m, --max-graphs N  Subsample to at most N graphs (default: 0 = use all)
 #   -d, --datasets "D"  Space-separated list of datasets (default: all)
 #   --quick             Quick mode: 2x2 CV instead of 10x10
 #   --dry-run           Print commands without executing
@@ -22,6 +23,7 @@ set -e
 # Default values
 JOBS=4
 TIMEOUT=0
+MAX_GRAPHS=0
 QUICK=false
 DRY_RUN=false
 DATASETS=""
@@ -55,6 +57,10 @@ while [[ $# -gt 0 ]]; do
             ;;
         -d|--datasets)
             DATASETS="$2"
+            shift 2
+            ;;
+        -m|--max-graphs)
+            MAX_GRAPHS="$2"
             shift 2
             ;;
         --quick)
@@ -92,6 +98,9 @@ fi
 
 # Build base command
 BASE_CMD="python run_pathboost_regression_alchemy.py --timeout $TIMEOUT"
+if [[ "$MAX_GRAPHS" -gt 0 ]]; then
+    BASE_CMD="$BASE_CMD --max-graphs $MAX_GRAPHS"
+fi
 if [[ "$QUICK" == true ]]; then
     BASE_CMD="$BASE_CMD --quick"
 fi
@@ -105,6 +114,7 @@ echo "Parallel Regression Runner"
 echo "=========================================="
 echo "Jobs:       $JOBS"
 echo "Timeout:    $TIMEOUT seconds (0 = no limit)"
+echo "Max graphs: $MAX_GRAPHS (0 = use all)"
 echo "Quick mode: $QUICK"
 echo "Datasets:   ${#DATASET_LIST[@]}"
 echo "Log dir:    $LOG_DIR"

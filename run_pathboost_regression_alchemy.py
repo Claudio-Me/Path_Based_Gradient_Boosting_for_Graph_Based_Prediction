@@ -291,6 +291,17 @@ def run_dataset(dataset_name, csv_writer, logger, args, n_repeats, n_folds):
     logger.info(f"Loaded {len(nx_graphs)} graphs.")
 
     # ------------------------------------------------------------------
+    # Subsample if requested
+    # ------------------------------------------------------------------
+    if args.max_graphs and len(nx_graphs) > args.max_graphs:
+        rng = np.random.RandomState(CV_SEED)
+        indices = rng.choice(len(nx_graphs), args.max_graphs, replace=False)
+        indices.sort()
+        nx_graphs = [nx_graphs[i] for i in indices]
+        labels = labels[indices]
+        logger.info(f"Subsampled to {len(nx_graphs)} graphs (from {n_graphs}).")
+
+    # ------------------------------------------------------------------
     # Find categorical attribute & anchor labels
     # ------------------------------------------------------------------
     categorical_attr = find_categorical_node_attributes(nx_graphs)
@@ -401,6 +412,10 @@ def main():
         help=f"Timeout per experiment in seconds (default: {DEFAULT_TIMEOUT})"
     )
     parser.add_argument(
+        '--max-graphs', type=int, default=0,
+        help="Subsample to at most N graphs (0 = use all, default: 0)"
+    )
+    parser.add_argument(
         '--quick', action='store_true',
         help="Quick mode: 2x2 CV instead of 10x10 (for testing)"
     )
@@ -418,6 +433,8 @@ def main():
     n_folds = 2 if args.quick else 10
     if args.quick:
         logger.info("Quick mode: using 2x2 CV")
+    if args.max_graphs:
+        logger.info(f"Subsampling to max {args.max_graphs} graphs per dataset")
 
     logger.info(f"Processing {len(datasets)} dataset(s): {', '.join(datasets)}")
     logger.info(f"Timeout per experiment: {args.timeout}s ({args.timeout/3600:.1f}h)")
