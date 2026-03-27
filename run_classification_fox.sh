@@ -4,7 +4,7 @@
 #SBATCH --partition=normal
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=55
-#SBATCH --time=7-00:00:00
+#SBATCH --time=5-00:00:00
 #SBATCH --mem-per-cpu=4G
 #SBATCH --output=logs/%x_%j.log
 #SBATCH --error=logs/%x_%j.log

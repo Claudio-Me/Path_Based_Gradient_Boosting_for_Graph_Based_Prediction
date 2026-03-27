@@ -118,7 +118,7 @@ for dataset in "${DATASET_LIST[@]}"; do
         --partition=normal \
         --ntasks=1 \
         --cpus-per-task=4 \
-        --time=7-00:00:00 \
+        --time=5-00:00:00 \
         --mem-per-cpu=8G \
         --output=logs/PBr_${dataset}_%j.log \
         --error=logs/PBr_${dataset}_%j.log \
