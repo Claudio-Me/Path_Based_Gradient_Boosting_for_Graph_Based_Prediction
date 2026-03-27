@@ -31,7 +31,6 @@ ALL_DATASETS=(
     ethanol
     malonaldehyde
     naphthalene
-    salicylic_acid
     toluene
     uracil
     ZINC_full
@@ -119,11 +118,11 @@ for dataset in "${DATASET_LIST[@]}"; do
         --partition=normal \
         --ntasks=1 \
         --cpus-per-task=4 \
-        --time=24:00:00 \
+        --time=7-00:00:00 \
         --mem-per-cpu=8G \
         --output=logs/PBr_${dataset}_%j.log \
         --error=logs/PBr_${dataset}_%j.log \
-        --wrap=\"set -e; cd \$SLURM_SUBMIT_DIR; source .different_datasets_venv/bin/activate; $PY_CMD\""
+        --wrap=\"set -e; cd /fp/homes01/u01/ec-claudm/Different_datasets/different_datasets; source .different_datasets_venv/bin/activate; $PY_CMD\""
 
     if [[ "$DRY_RUN" == true ]]; then
         echo "[DRY RUN] $SBATCH_CMD"

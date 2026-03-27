@@ -17,7 +17,7 @@ source .different_datasets_venv/bin/activate
 
 python -c "
 from torch_geometric.datasets import TUDataset
-datasets = ['aspirin','benzene','ethanol','malonaldehyde','naphthalene','salicylic_acid','toluene','uracil','ZINC_full','ZINC_test','ZINC_train','ZINC_val']
+datasets = ['aspirin','benzene','ethanol','malonaldehyde','naphthalene','toluene','uracil','ZINC_full','ZINC_test','ZINC_train','ZINC_val']
 for name in datasets:
     print(f'Downloading {name}...', end=' ', flush=True)
     try:

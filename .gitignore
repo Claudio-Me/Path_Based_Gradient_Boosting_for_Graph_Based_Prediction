@@ -27,6 +27,8 @@ build/
 # Project specific
 nx_graphs/
 ogb_dataset/
+datasets
+logs/
 
 # Data files
 *.pkl
@@ -34,6 +36,8 @@ ogb_dataset/
 *.gpickle
 *.xlsx
 *.pt
+*.so
+*.dylib
 *.txt
 !requirements.txt
 ~$*
@@ -46,6 +50,7 @@ ogb_dataset/
 *.bib
 
 # Other
+tudataset/tud_benchmark/kernel_baselines.cpython-*.so
 *.xml
 *.iml
 *.pdf

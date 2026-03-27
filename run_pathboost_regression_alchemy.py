@@ -52,7 +52,6 @@ ALL_REGRESSION_DATASETS = [
     "ethanol",
     "malonaldehyde",
     "naphthalene",
-    "salicylic_acid",
     "toluene",
     "uracil",
     "ZINC_full",
