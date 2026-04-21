@@ -27,6 +27,7 @@ NX_GRAPHS_DIR = "nx_graphs"
 # Metrics tracked by each method
 PATHBOOST_METRICS = ['accuracy', 'balanced_accuracy', 'f1', 'f1_macro', 'recall', 'roc_auc']
 GNN_METRICS = ['accuracy', 'balanced_accuracy', 'f1', 'f1_macro', 'recall', 'roc_auc']
+REGRESSION_METRICS = ['mae', 'mse', 'r2']
 KERNEL_METRICS = ['accuracy']  # C++ kernels only return accuracy
 
 # Kernel method names

@@ -2,7 +2,7 @@
 """
 Sequential PathBoost regression evaluation on regression datasets.
 
-Runs two side-by-side experiments per dataset with 10×10 fold cross-validation:
+Runs two side-by-side experiments per dataset with 10x10 fold cross-validation:
   1. Full: Use all node attributes as-is
   2. Categorical-only: Strip all node attributes except the single categorical
      attribute used for anchor node selection (ablation study)
@@ -30,6 +30,7 @@ from shared import (
     CV_SEED,
     NX_GRAPHS_DIR,
     DEFAULT_TIMEOUT,
+    REGRESSION_METRICS,
     get_base_dir,
 )
 
@@ -39,11 +40,6 @@ from utils import load_or_build_nx_graphs, find_categorical_node_attributes
 # ---------------------------------------------------------------------------
 # Configuration
 # ---------------------------------------------------------------------------
-
-# Which regression target to use (alchemy_full has 12 targets, 0-indexed)
-TARGET_INDEX = 0
-
-REGRESSION_METRICS = ['mae', 'mse', 'r2']
 
 ALL_REGRESSION_DATASETS = [
     "alchemy_full",
@@ -78,6 +74,38 @@ def strip_to_categorical_only(graphs, categorical_attr):
     return stripped
 
 
+def _load_targets_2d(dataset_name: str) -> np.ndarray:
+    try:
+        targets = get_dataset(dataset_name, multi_target_regression=True)
+    except Exception:
+        targets = get_dataset(dataset_name, regression=True)
+    targets = np.array(targets)
+    if targets.ndim == 1:
+        return targets.reshape(-1, 1)
+    return targets
+
+
+def _build_failure_tags(dataset_name: str, args) -> List[str]:
+    try:
+        n_targets = _load_targets_2d(dataset_name).shape[1]
+    except Exception:
+        n_targets = 1
+
+    if args.all_targets:
+        target_indices = list(range(n_targets))
+    else:
+        if args.target_index < 0 or args.target_index >= n_targets:
+            return []
+        target_indices = [args.target_index]
+
+    tags = []
+    for target_idx in target_indices:
+        tags.append(f"{dataset_name}_t{target_idx}_full")
+        if target_idx == 0:
+            tags.append(f"{dataset_name}_t{target_idx}_categorical_only")
+    return tags
+
+
 # ---------------------------------------------------------------------------
 # Regression evaluation
 # ---------------------------------------------------------------------------
@@ -94,7 +122,7 @@ def pathboost_regression_evaluation(
     cv_seed: Optional[int] = None,
 ) -> Dict:
     """
-    Run SequentialPathBoost (regressor) with GridSearchCV over 10×10 CV.
+    Run SequentialPathBoost (regressor) with GridSearchCV over 10x10 CV.
 
     Args:
         nx_graphs: List of NetworkX graphs
@@ -145,20 +173,17 @@ def pathboost_regression_evaluation(
             'n_iter': [500, 1500, 2000],
         }
 
-    # Scorer keys used in GridSearchCV
     scoring = {
         'neg_mean_absolute_error': 'neg_mean_absolute_error',
         'neg_mean_squared_error': 'neg_mean_squared_error',
         'r2': 'r2',
     }
 
-    # Internal accumulator keyed by scorer name
     _scorer_to_metric = {
         'neg_mean_absolute_error': 'mae',
         'neg_mean_squared_error': 'mse',
         'r2': 'r2',
     }
-    # Whether to negate the scorer value when reporting
     _negate = {
         'neg_mean_absolute_error': True,
         'neg_mean_squared_error': True,
@@ -168,7 +193,7 @@ def pathboost_regression_evaluation(
     all_metrics_results = {
         'mae': {'best_scores': [], 'fold_scores': []},
         'mse': {'best_scores': [], 'fold_scores': []},
-        'r2':  {'best_scores': [], 'fold_scores': []},
+        'r2': {'best_scores': [], 'fold_scores': []},
     }
     timing_results = {'fit_times': [], 'fit_time_stds': []}
 
@@ -216,7 +241,6 @@ def pathboost_regression_evaluation(
 
             print(f"[{tag}] Repeat {rep + 1}/{n_repeats} done.")
 
-        # Aggregate
         results_dict = {}
         for metric_key, data in all_metrics_results.items():
             best_scores = data['best_scores']
@@ -250,64 +274,58 @@ def pathboost_regression_evaluation(
 # ---------------------------------------------------------------------------
 
 def run_dataset(dataset_name, csv_writer, logger, args, n_repeats, n_folds):
-    """Run both experiments (full + categorical-only) for a single dataset."""
+    """Run regression experiments for the selected target mode on one dataset."""
     base_dir = get_base_dir()
 
-    # ------------------------------------------------------------------
-    # Load targets
-    # ------------------------------------------------------------------
     logger.info(f"Loading targets for {dataset_name}...")
-    try:
-        targets = get_dataset(dataset_name, multi_target_regression=True)
-    except Exception:
-        # Some datasets use single-target regression
-        targets = get_dataset(dataset_name, regression=True)
-    targets = np.array(targets)
+    targets_2d = _load_targets_2d(dataset_name)
+    n_graphs, n_targets = targets_2d.shape
 
-    if targets.ndim == 1:
-        n_graphs = len(targets)
-        n_targets = 1
-        labels = targets.astype(float)
+    if args.normalize:
+        mean = targets_2d.mean(axis=0)
+        std = targets_2d.std(axis=0)
+        std[std == 0] = 1.0
+        targets_2d = (targets_2d - mean) / std
+        logger.info(f"Normalized {n_targets} target(s); means={mean}, stds={std}")
+
+    if args.all_targets:
+        target_indices = list(range(n_targets))
     else:
-        n_graphs, n_targets = targets.shape
-        labels = targets[:, TARGET_INDEX].astype(float)
+        if args.target_index < 0 or args.target_index >= n_targets:
+            logger.warning(
+                f"{dataset_name}: target_index {args.target_index} out of range "
+                f"(have {n_targets} targets); skipping"
+            )
+            return
+        target_indices = [args.target_index]
 
-    print(
-        f"{dataset_name} has {n_graphs} graphs, {n_targets} target(s). "
-        f"Using target index {TARGET_INDEX}."
-    )
-    logger.info(
-        f"Target stats: min={labels.min():.4f}, max={labels.max():.4f}, "
-        f"mean={labels.mean():.4f}, std={labels.std():.4f}"
-    )
+    logger.info(f"{dataset_name}: {n_graphs} graphs, {n_targets} target(s), evaluating indices={target_indices}")
 
-    # ------------------------------------------------------------------
-    # Load NetworkX graphs
-    # ------------------------------------------------------------------
     dataset_path = os.path.join(base_dir, dataset_name)
     logger.info(f"Loading NetworkX graphs for {dataset_name}...")
     nx_graphs = load_or_build_nx_graphs(dataset_name, dataset_path, NX_GRAPHS_DIR)
     logger.info(f"Loaded {len(nx_graphs)} graphs.")
 
-    # ------------------------------------------------------------------
-    # Subsample if requested
-    # ------------------------------------------------------------------
-    if args.max_graphs and len(nx_graphs) > args.max_graphs:
+    subsample_indices = None
+    n_graphs_original = len(nx_graphs)
+    if args.max_graphs and n_graphs_original > args.max_graphs:
         rng = np.random.RandomState(CV_SEED)
-        indices = rng.choice(len(nx_graphs), args.max_graphs, replace=False)
-        indices.sort()
-        nx_graphs = [nx_graphs[i] for i in indices]
-        labels = labels[indices]
-        logger.info(f"Subsampled to {len(nx_graphs)} graphs (from {n_graphs}).")
+        subsample_indices = rng.choice(n_graphs_original, args.max_graphs, replace=False)
+        subsample_indices.sort()
+        nx_graphs = [nx_graphs[i] for i in subsample_indices]
+        logger.info(f"Subsampled to {len(nx_graphs)} graphs (from {n_graphs_original}).")
 
-    # ------------------------------------------------------------------
-    # Find categorical attribute & anchor labels
-    # ------------------------------------------------------------------
     categorical_attr = find_categorical_node_attributes(nx_graphs)
     if not categorical_attr:
         logger.warning(f"{dataset_name}: No categorical node attribute found. Skipping.")
-        csv_writer.write_failure(f"{dataset_name}_full", REGRESSION_METRICS, "FAILED")
-        csv_writer.write_failure(f"{dataset_name}_categorical_only", REGRESSION_METRICS, "FAILED")
+        for target_idx in target_indices:
+            csv_writer.write_failure(f"{dataset_name}_t{target_idx}_full", REGRESSION_METRICS, "FAILED")
+            if target_idx == 0:
+                csv_writer.write_failure(
+                    f"{dataset_name}_t{target_idx}_categorical_only",
+                    REGRESSION_METRICS,
+                    "FAILED",
+                )
         return
 
     anchor_labels = set()
@@ -319,8 +337,14 @@ def run_dataset(dataset_name, csv_writer, logger, args, n_repeats, n_folds):
 
     if len(anchor_labels) < 2:
         logger.warning(f"{dataset_name}: Not enough distinct anchor labels. Skipping.")
-        csv_writer.write_failure(f"{dataset_name}_full", REGRESSION_METRICS, "FAILED")
-        csv_writer.write_failure(f"{dataset_name}_categorical_only", REGRESSION_METRICS, "FAILED")
+        for target_idx in target_indices:
+            csv_writer.write_failure(f"{dataset_name}_t{target_idx}_full", REGRESSION_METRICS, "FAILED")
+            if target_idx == 0:
+                csv_writer.write_failure(
+                    f"{dataset_name}_t{target_idx}_categorical_only",
+                    REGRESSION_METRICS,
+                    "FAILED",
+                )
         return
 
     print(
@@ -336,66 +360,74 @@ def run_dataset(dataset_name, csv_writer, logger, args, n_repeats, n_folds):
         cv_seed=CV_SEED,
     )
 
-    # ------------------------------------------------------------------
-    # Experiment 1: Full attributes
-    # ------------------------------------------------------------------
-    exp1_name = f"{dataset_name}_full"
-    logger.info(f"=== Experiment 1: {exp1_name} ===")
+    for target_idx in target_indices:
+        labels = targets_2d[:, target_idx].astype(float)
+        if subsample_indices is not None:
+            labels = labels[subsample_indices]
 
-    result1, timed_out1, error1 = run_with_timeout(
-        pathboost_regression_evaluation,
-        args=(nx_graphs, labels),
-        kwargs=dict(experiment_name=exp1_name, **eval_kwargs),
-        timeout_sec=args.timeout,
-    )
+        logger.info(
+            f"{dataset_name}_t{target_idx}: target stats min={labels.min():.4f}, "
+            f"max={labels.max():.4f}, mean={labels.mean():.4f}, std={labels.std():.4f}"
+        )
 
-    if timed_out1:
-        logger.warning(f"{exp1_name}: TIMEOUT after {args.timeout}s")
-        csv_writer.write_failure(exp1_name, REGRESSION_METRICS, "TIMEOUT")
-    elif error1:
-        logger.error(f"{exp1_name}: {error1}")
-        csv_writer.write_failure(exp1_name, REGRESSION_METRICS, "FAILED")
-    elif result1:
-        timing_data1 = result1.pop('_timing', None)
-        csv_writer.write_results(exp1_name, result1, timing_data=timing_data1)
-        if 'mae' in result1:
-            mae, s10, s100 = result1['mae']
-            logger.info(f"{exp1_name}: MAE={mae:.4f} (std10={s10:.4f}, std100={s100:.4f})")
-    else:
-        logger.warning(f"{exp1_name}: No results returned")
-        csv_writer.write_failure(exp1_name, REGRESSION_METRICS, "FAILED")
+        exp1_name = f"{dataset_name}_t{target_idx}_full"
+        logger.info(f"=== Experiment 1: {exp1_name} ===")
 
-    # ------------------------------------------------------------------
-    # Experiment 2: Categorical-only (ablation)
-    # ------------------------------------------------------------------
-    exp2_name = f"{dataset_name}_categorical_only"
-    logger.info(f"=== Experiment 2: {exp2_name} ===")
-    logger.info(f"Stripping all node attributes except '{categorical_attr}'...")
+        result1, timed_out1, error1 = run_with_timeout(
+            pathboost_regression_evaluation,
+            args=(nx_graphs, labels),
+            kwargs=dict(experiment_name=exp1_name, **eval_kwargs),
+            timeout_sec=args.timeout,
+        )
 
-    stripped_graphs = strip_to_categorical_only(nx_graphs, categorical_attr)
+        if timed_out1:
+            logger.warning(f"{exp1_name}: TIMEOUT after {args.timeout}s")
+            csv_writer.write_failure(exp1_name, REGRESSION_METRICS, "TIMEOUT")
+        elif error1:
+            logger.error(f"{exp1_name}: {error1}")
+            csv_writer.write_failure(exp1_name, REGRESSION_METRICS, "FAILED")
+        elif result1:
+            timing_data1 = result1.pop('_timing', None)
+            csv_writer.write_results(exp1_name, result1, timing_data=timing_data1)
+            if 'mae' in result1:
+                mae, s10, s100 = result1['mae']
+                logger.info(f"{exp1_name}: MAE={mae:.4f} (std10={s10:.4f}, std100={s100:.4f})")
+        else:
+            logger.warning(f"{exp1_name}: No results returned")
+            csv_writer.write_failure(exp1_name, REGRESSION_METRICS, "FAILED")
 
-    result2, timed_out2, error2 = run_with_timeout(
-        pathboost_regression_evaluation,
-        args=(stripped_graphs, labels),
-        kwargs=dict(experiment_name=exp2_name, **eval_kwargs),
-        timeout_sec=args.timeout,
-    )
+        if target_idx != 0:
+            logger.info(f"Skipping categorical-only ablation for target {target_idx} (rule: target 0 only)")
+            continue
 
-    if timed_out2:
-        logger.warning(f"{exp2_name}: TIMEOUT after {args.timeout}s")
-        csv_writer.write_failure(exp2_name, REGRESSION_METRICS, "TIMEOUT")
-    elif error2:
-        logger.error(f"{exp2_name}: {error2}")
-        csv_writer.write_failure(exp2_name, REGRESSION_METRICS, "FAILED")
-    elif result2:
-        timing_data2 = result2.pop('_timing', None)
-        csv_writer.write_results(exp2_name, result2, timing_data=timing_data2)
-        if 'mae' in result2:
-            mae, s10, s100 = result2['mae']
-            logger.info(f"{exp2_name}: MAE={mae:.4f} (std10={s10:.4f}, std100={s100:.4f})")
-    else:
-        logger.warning(f"{exp2_name}: No results returned")
-        csv_writer.write_failure(exp2_name, REGRESSION_METRICS, "FAILED")
+        exp2_name = f"{dataset_name}_t{target_idx}_categorical_only"
+        logger.info(f"=== Experiment 2: {exp2_name} ===")
+        logger.info(f"Stripping all node attributes except '{categorical_attr}'...")
+
+        stripped_graphs = strip_to_categorical_only(nx_graphs, categorical_attr)
+
+        result2, timed_out2, error2 = run_with_timeout(
+            pathboost_regression_evaluation,
+            args=(stripped_graphs, labels),
+            kwargs=dict(experiment_name=exp2_name, **eval_kwargs),
+            timeout_sec=args.timeout,
+        )
+
+        if timed_out2:
+            logger.warning(f"{exp2_name}: TIMEOUT after {args.timeout}s")
+            csv_writer.write_failure(exp2_name, REGRESSION_METRICS, "TIMEOUT")
+        elif error2:
+            logger.error(f"{exp2_name}: {error2}")
+            csv_writer.write_failure(exp2_name, REGRESSION_METRICS, "FAILED")
+        elif result2:
+            timing_data2 = result2.pop('_timing', None)
+            csv_writer.write_results(exp2_name, result2, timing_data=timing_data2)
+            if 'mae' in result2:
+                mae, s10, s100 = result2['mae']
+                logger.info(f"{exp2_name}: MAE={mae:.4f} (std10={s10:.4f}, std100={s100:.4f})")
+        else:
+            logger.warning(f"{exp2_name}: No results returned")
+            csv_writer.write_failure(exp2_name, REGRESSION_METRICS, "FAILED")
 
 
 def main():
@@ -405,6 +437,18 @@ def main():
     parser.add_argument(
         'datasets', nargs='*', default=None,
         help="Dataset names to evaluate (default: all regression datasets)"
+    )
+    parser.add_argument(
+        '--target-index', type=int, default=0,
+        help="Which target column to use in single-target mode (default: 0)"
+    )
+    parser.add_argument(
+        '--all-targets', action='store_true',
+        help="Run every target column; for alchemy_full this is 12 targets"
+    )
+    parser.add_argument(
+        '--normalize', action='store_true',
+        help="Z-score normalize each target before CV. Requires --all-targets."
     )
     parser.add_argument(
         '--timeout', type=int, default=DEFAULT_TIMEOUT,
@@ -424,23 +468,49 @@ def main():
     )
     args = parser.parse_args()
 
-    logger = setup_logging('pathboost_regression', args.verbose)
+    if args.normalize and not args.all_targets:
+        parser.error("--normalize requires --all-targets")
 
+    logger = setup_logging('pathboost_regression', args.verbose)
     datasets = args.datasets if args.datasets else ALL_REGRESSION_DATASETS
 
     n_repeats = 2 if args.quick else 10
     n_folds = 2 if args.quick else 10
-    if args.quick:
-        logger.info("Quick mode: using 2x2 CV")
+
+    target_mode = f"single target (index {args.target_index})"
+    if args.all_targets:
+        total_targets = None
+        if len(datasets) == 1:
+            try:
+                total_targets = _load_targets_2d(datasets[0]).shape[1]
+            except Exception:
+                total_targets = None
+        target_mode = (
+            f"all targets ({total_targets} total)"
+            if total_targets is not None
+            else "all targets"
+        )
+
+    norm_text = "ENABLED (z-score per target)" if args.normalize else "disabled"
+    cv_text = "2x2 (quick)" if args.quick else "10x10"
+    banner = (
+        "=" * 60 + "\n"
+        "  PATHBOOST REGRESSION\n"
+        f"  Datasets:      {', '.join(datasets)}\n"
+        f"  Target mode:   {target_mode}\n"
+        f"  Normalization: {norm_text}\n"
+        f"  CV:            {cv_text}\n"
+        + "=" * 60
+    )
+    print(banner)
+    logger.info("\n" + banner)
+
     if args.max_graphs:
         logger.info(f"Subsampling to max {args.max_graphs} graphs per dataset")
 
     logger.info(f"Processing {len(datasets)} dataset(s): {', '.join(datasets)}")
     logger.info(f"Timeout per experiment: {args.timeout}s ({args.timeout/3600:.1f}h)")
 
-    # ------------------------------------------------------------------
-    # Output CSV
-    # ------------------------------------------------------------------
     csv_path = get_timestamped_path(
         'PathBoost_results',
         'Sequential_PathBoost_Regression'
@@ -457,8 +527,11 @@ def main():
         except Exception as e:
             logger.error(f"{dataset_name}: {type(e).__name__}: {e}")
             logger.error(traceback.format_exc())
-            csv_writer.write_failure(f"{dataset_name}_full", REGRESSION_METRICS, "FAILED")
-            csv_writer.write_failure(f"{dataset_name}_categorical_only", REGRESSION_METRICS, "FAILED")
+            failure_tags = _build_failure_tags(dataset_name, args)
+            if not failure_tags:
+                logger.warning(f"{dataset_name}: could not determine failure tags for target mode")
+            for tag in failure_tags:
+                csv_writer.write_failure(tag, REGRESSION_METRICS, "FAILED")
 
     logger.info(f"All done. Results saved to: {csv_path}")
 

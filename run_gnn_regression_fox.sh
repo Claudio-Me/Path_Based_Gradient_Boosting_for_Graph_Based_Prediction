@@ -1,13 +1,13 @@
 #!/bin/bash
 #
-# Submit one SLURM job per regression dataset.
+# Submit one SLURM job per regression dataset for GNN regression.
 #
 # Usage:
-#   ./run_regression_fox.sh                        # all datasets, default settings
-#   ./run_regression_fox.sh -m 5000                # subsample to 5000 graphs
-#   ./run_regression_fox.sh -d "aspirin benzene"   # specific datasets only
-#   ./run_regression_fox.sh --all-targets --normalize -d "alchemy_full"
-#   ./run_regression_fox.sh --dry-run              # preview sbatch commands
+#   ./run_gnn_regression_fox.sh                        # all datasets, default settings
+#   ./run_gnn_regression_fox.sh -m 5000                # subsample to 5000 graphs
+#   ./run_gnn_regression_fox.sh -d "alchemy_full"      # specific datasets only
+#   ./run_gnn_regression_fox.sh --all-targets --normalize -d "alchemy_full"
+#   ./run_gnn_regression_fox.sh --dry-run              # preview sbatch commands
 #
 # Options:
 #   -t, --timeout N        Timeout per experiment in seconds (default: 0 = no limit)
@@ -16,6 +16,7 @@
 #       --target-index N   Target column index in single-target mode (default: 0)
 #       --all-targets      Run every target column (alchemy_full = 12 targets)
 #       --normalize        Z-score normalize each target. Requires --all-targets.
+#       --device DEV       cpu|gpu|cuda (default: cpu)
 #       --quick            Quick mode: 2x2 CV instead of 10x10
 #       --dry-run          Print sbatch commands without submitting
 
@@ -30,6 +31,7 @@ DATASETS=""
 TARGET_INDEX=""
 ALL_TARGETS=false
 NORMALIZE=false
+DEVICE="cpu"
 
 ALL_DATASETS=(
     alchemy_full
@@ -73,6 +75,10 @@ while [[ $# -gt 0 ]]; do
             NORMALIZE=true
             shift
             ;;
+        --device)
+            DEVICE="$2"
+            shift 2
+            ;;
         --quick)
             QUICK=true
             shift
@@ -84,7 +90,7 @@ while [[ $# -gt 0 ]]; do
         -h|--help)
             echo "Usage: $0 [options]"
             echo ""
-            echo "Submit one SLURM job per regression dataset."
+            echo "Submit one SLURM job per regression dataset (GNN regression)."
             echo ""
             echo "Options:"
             echo "  -t, --timeout N        Timeout per experiment in seconds (default: 0)"
@@ -93,6 +99,7 @@ while [[ $# -gt 0 ]]; do
             echo "      --target-index N   Target column index in single-target mode"
             echo "      --all-targets      Run every target column (alchemy_full = 12)"
             echo "      --normalize        Z-score normalize each target (needs --all-targets)"
+            echo "      --device DEV       cpu|gpu|cuda (default: cpu)"
             echo "      --quick            Quick mode: 2x2 CV instead of 10x10"
             echo "      --dry-run          Print sbatch commands without submitting"
             exit 0
@@ -120,20 +127,21 @@ fi
 mkdir -p logs
 
 echo "=========================================="
-echo "Regression SLURM Job Submitter"
+echo "GNN Regression SLURM Job Submitter"
 echo "=========================================="
 echo "Datasets:     ${#DATASET_LIST[@]}"
 echo "Timeout:      $TIMEOUT seconds (0 = no limit)"
 echo "Max graphs:   $MAX_GRAPHS (0 = use all)"
 echo "Target mode:  $( [[ "$ALL_TARGETS" == true ]] && echo "all targets" || echo "single target (index ${TARGET_INDEX:-0})" )"
 echo "Normalize:    $NORMALIZE"
+echo "Device:       $DEVICE"
 echo "Quick mode:   $QUICK"
 echo "=========================================="
 echo ""
 
 for dataset in "${DATASET_LIST[@]}"; do
     # Build the python command
-    PY_CMD="python run_pathboost_regression_alchemy.py --timeout $TIMEOUT"
+    PY_CMD="python run_gnn_regression_alchemy.py --timeout $TIMEOUT --device $DEVICE"
     if [[ "$MAX_GRAPHS" -gt 0 ]]; then
         PY_CMD="$PY_CMD --max-graphs $MAX_GRAPHS"
     fi
@@ -153,14 +161,14 @@ for dataset in "${DATASET_LIST[@]}"; do
 
     # Build sbatch command
     SBATCH_CMD="sbatch --account=ec12 \
-        --job-name=PBr_${dataset} \
+        --job-name=GNNr_${dataset} \
         --partition=normal \
         --ntasks=1 \
         --cpus-per-task=4 \
         --time=5-00:00:00 \
         --mem-per-cpu=8G \
-        --output=logs/PBr_${dataset}_%j.log \
-        --error=logs/PBr_${dataset}_%j.log \
+        --output=logs/GNNr_${dataset}_%j.log \
+        --error=logs/GNNr_${dataset}_%j.log \
         --wrap=\"set -e; cd /fp/homes01/u01/ec-claudm/Different_datasets/different_datasets; source .different_datasets_venv/bin/activate; $PY_CMD\""
 
     if [[ "$DRY_RUN" == true ]]; then
