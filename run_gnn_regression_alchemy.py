@@ -6,9 +6,14 @@ Supports single-target and all-target execution with optional per-target z-score
 normalization (all-target mode only).
 """
 import argparse
+import multiprocessing as mp
 import os
 import traceback
 import numpy as np
+
+# CUDA requires 'spawn' start method — 'fork' (Linux default) inherits a broken
+# CUDA context into the child process spawned by run_with_timeout.
+mp.set_start_method('spawn', force=True)
 
 from shared import (
     ResultsCSVWriter,
