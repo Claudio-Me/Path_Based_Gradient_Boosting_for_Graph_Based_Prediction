@@ -16,7 +16,10 @@
 #       --target-index N   Target column index in single-target mode (default: 0)
 #       --all-targets      Run every target column (alchemy_full = 12 targets)
 #       --normalize        Z-score normalize each target. Requires --all-targets.
-#       --device DEV       cpu|gpu|cuda (default: cpu)
+#       --device DEV       cpu|gpu|cuda (default: gpu)
+#       --gpu-type TYPE    GPU type: rtx30|a100|a40|h100|l40s (default: rtx30)
+#       --gpu-count N      Number of GPUs per job (default: 1)
+#       --partition PART   SLURM partition: accel|ifi_accel|hudel (default: accel)
 #       --quick            Quick mode: 2x2 CV instead of 10x10
 #       --dry-run          Print sbatch commands without submitting
 
@@ -31,7 +34,10 @@ DATASETS=""
 TARGET_INDEX=""
 ALL_TARGETS=false
 NORMALIZE=false
-DEVICE="cpu"
+DEVICE="gpu"
+GPU_TYPE="rtx30"
+GPU_COUNT=1
+PARTITION="accel"
 
 ALL_DATASETS=(
     alchemy_full
@@ -79,6 +85,18 @@ while [[ $# -gt 0 ]]; do
             DEVICE="$2"
             shift 2
             ;;
+        --gpu-type)
+            GPU_TYPE="$2"
+            shift 2
+            ;;
+        --gpu-count)
+            GPU_COUNT="$2"
+            shift 2
+            ;;
+        --partition)
+            PARTITION="$2"
+            shift 2
+            ;;
         --quick)
             QUICK=true
             shift
@@ -99,7 +117,10 @@ while [[ $# -gt 0 ]]; do
             echo "      --target-index N   Target column index in single-target mode"
             echo "      --all-targets      Run every target column (alchemy_full = 12)"
             echo "      --normalize        Z-score normalize each target (needs --all-targets)"
-            echo "      --device DEV       cpu|gpu|cuda (default: cpu)"
+            echo "      --device DEV       cpu|gpu|cuda (default: gpu)"
+            echo "      --gpu-type TYPE    GPU type: rtx30|a100|a40|h100|l40s (default: rtx30)"
+            echo "      --gpu-count N      Number of GPUs per job (default: 1)"
+            echo "      --partition PART   SLURM partition: accel|ifi_accel|hudel (default: accel)"
             echo "      --quick            Quick mode: 2x2 CV instead of 10x10"
             echo "      --dry-run          Print sbatch commands without submitting"
             exit 0
@@ -135,6 +156,8 @@ echo "Max graphs:   $MAX_GRAPHS (0 = use all)"
 echo "Target mode:  $( [[ "$ALL_TARGETS" == true ]] && echo "all targets" || echo "single target (index ${TARGET_INDEX:-0})" )"
 echo "Normalize:    $NORMALIZE"
 echo "Device:       $DEVICE"
+echo "Partition:    $PARTITION"
+echo "GPU:          ${GPU_TYPE}:${GPU_COUNT}"
 echo "Quick mode:   $QUICK"
 echo "=========================================="
 echo ""
@@ -162,7 +185,8 @@ for dataset in "${DATASET_LIST[@]}"; do
     # Build sbatch command
     SBATCH_CMD="sbatch --account=ec12 \
         --job-name=GNNr_${dataset} \
-        --partition=normal \
+        --partition=${PARTITION} \
+        --gpus=${GPU_TYPE}:${GPU_COUNT} \
         --ntasks=1 \
         --cpus-per-task=4 \
         --time=5-00:00:00 \
