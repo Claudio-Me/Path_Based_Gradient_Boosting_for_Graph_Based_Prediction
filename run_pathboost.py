@@ -279,7 +279,7 @@ def main():
             result, timed_out, error = run_with_timeout(
                 pathboost_evaluation_with_auc,
                 args=(nx_graphs, labels, dataset_name),
-                kwargs={'cv_seed': CV_SEED},
+                kwargs={'cv_seed': CV_SEED, 'n_repeats': args.repetitions},
                 timeout_sec=args.timeout
             )
 

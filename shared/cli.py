@@ -52,6 +52,13 @@ Examples:
         )
 
     parser.add_argument(
+        '--repetitions',
+        type=int,
+        default=10,
+        help='Number of CV repetitions (default: 10)'
+    )
+
+    parser.add_argument(
         '--verbose',
         '-v',
         action='store_true',
