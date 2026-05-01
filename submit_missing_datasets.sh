@@ -69,5 +69,5 @@ for DS in "${DATASETS[@]}"; do
         --mem-per-cpu=8G \
         --output="logs/ker_${DS}_%j.log" \
         --error="logs/ker_${DS}_%j.log" \
-        --wrap="$SETUP; python run_kernel.py --kernels WL_subtree Graphlet Shortest_path WLOA $DS"
+        --wrap="$SETUP; python run_kernel.py $DS --kernels WL_subtree Graphlet Shortest_path WLOA"
 done
