@@ -161,7 +161,7 @@ for dataset in "${DATASET_LIST[@]}"; do
         --mem-per-cpu=8G \
         --output=logs/PBr_${dataset}_%j.log \
         --error=logs/PBr_${dataset}_%j.log \
-        --wrap=\"set -e; cd /fp/homes01/u01/ec-claudm/Different_datasets/different_datasets; source .different_datasets_venv/bin/activate; $PY_CMD\""
+        --wrap=\"set -e; cd /fp/homes01/u01/ec-claudm/different_datasets; source .different_datasets_venv/bin/activate; $PY_CMD\""
 
     if [[ "$DRY_RUN" == true ]]; then
         echo "[DRY RUN] $SBATCH_CMD"

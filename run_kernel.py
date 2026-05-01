@@ -121,7 +121,7 @@ KERNEL_FUNCS = [
 ]
 
 
-def run_all_kernels(dataset_name: str, timeout_per_kernel: int = 10286) -> dict:
+def run_all_kernels(dataset_name: str, timeout_per_kernel: int = 10286, kernel_funcs=None) -> dict:
     """
     Run all kernel methods on a dataset.
 
@@ -151,8 +151,9 @@ def run_all_kernels(dataset_name: str, timeout_per_kernel: int = 10286) -> dict:
     num_reps = 10
     use_labels = True
 
+    active_funcs = kernel_funcs if kernel_funcs is not None else KERNEL_FUNCS
     results = {}
-    for kernel_name, kernel_func in KERNEL_FUNCS:
+    for kernel_name, kernel_func in active_funcs:
         print(f"  Running {kernel_name}...")
 
         start_time = time.time()
@@ -180,8 +181,16 @@ def run_all_kernels(dataset_name: str, timeout_per_kernel: int = 10286) -> dict:
     return results
 
 
+NON_LINEAR_KERNELS = {"WL_subtree", "Graphlet", "Shortest_path", "WLOA"}
+
+
 def main():
     parser = create_argument_parser('Kernel', supports_device=False)
+    parser.add_argument(
+        '--kernels', nargs='+', metavar='KERNEL',
+        choices=[name for name, _ in KERNEL_FUNCS],
+        help='Kernel methods to run (default: all). Non-linear set: WL_subtree Graphlet Shortest_path WLOA',
+    )
     args = parser.parse_args()
 
     logger = setup_logging('kernel', args.verbose)
@@ -191,7 +200,13 @@ def main():
         logger.error("No valid datasets to process")
         sys.exit(1)
 
+    selected_funcs = [(n, f) for n, f in KERNEL_FUNCS if args.kernels is None or n in args.kernels]
+    if not selected_funcs:
+        logger.error("No kernel methods selected")
+        sys.exit(1)
+
     logger.info(f"Processing {len(datasets)} dataset(s): {', '.join(datasets)}")
+    logger.info(f"Kernels: {[n for n, _ in selected_funcs]}")
     logger.info(f"Total timeout per dataset: {args.timeout} seconds ({args.timeout/3600:.1f} hours)")
 
     # Setup output directory and CSV
@@ -199,15 +214,14 @@ def main():
     csv_writer = ResultsCSVWriter(csv_path)
     logger.info(f"Results will be saved to: {csv_path}")
 
-    # Calculate timeout per kernel (divide total by 7 kernels)
-    timeout_per_kernel = args.timeout // 7
+    timeout_per_kernel = args.timeout // len(selected_funcs)
     logger.info(f"Timeout per kernel: {timeout_per_kernel} seconds ({timeout_per_kernel/3600:.1f} hours)")
 
     for dataset_name in datasets:
         logger.info(f"Processing {dataset_name}...")
 
         try:
-            results = run_all_kernels(dataset_name, timeout_per_kernel)
+            results = run_all_kernels(dataset_name, timeout_per_kernel, kernel_funcs=selected_funcs)
 
             # Write results - one row per kernel method
             for kernel_name, result_tuple in results.items():
@@ -225,8 +239,7 @@ def main():
 
         except Exception as e:
             logger.error(f"{dataset_name}: {e}")
-            # Write failure for all kernels
-            for kernel_name in KERNEL_METHODS:
+            for kernel_name, _ in selected_funcs:
                 csv_writer.write_failure(dataset_name, [f"accuracy_{kernel_name}"], "FAILED")
 
     logger.info(f"All done. Results saved to: {csv_path}")
