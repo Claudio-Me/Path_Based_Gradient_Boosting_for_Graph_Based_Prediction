@@ -41,16 +41,16 @@ for DS in "${DATASETS[@]}"; do
         --wrap="$SETUP; python run_pathboost.py $DS"
 done
 
-# ── GNN (GPU RTX3090, 24 h) ───────────────────────────────────────────────
+# ── GNN (GPU RTX3090, 5 days — accel_long required for >24h) ─────────────
 for DS in "${DATASETS[@]}"; do
     submit sbatch \
         --account=ec12 \
         --job-name="gnn_${DS}" \
-        --partition=accel \
+        --partition=accel_long \
         --gpus=rtx30:1 \
         --ntasks=1 \
         --cpus-per-task=4 \
-        --time=1-00:00:00 \
+        --time=5-00:00:00 \
         --mem-per-cpu=8G \
         --output="logs/gnn_${DS}_%j.log" \
         --error="logs/gnn_${DS}_%j.log" \
