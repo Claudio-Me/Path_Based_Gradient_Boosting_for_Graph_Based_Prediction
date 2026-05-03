@@ -1,8 +1,8 @@
 """Shared constants across all evaluation scripts."""
 import os
 
-# Default timeout: 20 hours = 72000 seconds
-DEFAULT_TIMEOUT = 72000
+# Default timeout: 0 = no limit
+DEFAULT_TIMEOUT = 0
 
 # Cross-validation seed for reproducibility
 CV_SEED = 42
