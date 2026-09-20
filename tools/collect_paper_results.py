@@ -31,11 +31,14 @@ from tools.paper_values import (  # noqa: E402
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT_DIR = os.path.join(ROOT, "paper_results")
 
+# paper_results/raw/ comes first: it holds the evidence published with the
+# repository, so a clean clone can reproduce this audit without the working
+# directories of the original machine.
 DEFAULT_DIRS = {
-    "pathboost": ["PathBoost_results", "namshub_results/PathBoost_results"],
-    "gnn": ["GNN_results", "namshub_results/GNN_results"],
-    "kernel": ["Kernel_results", "namshub_results/Kernel_results"],
-    "regression": ["."],
+    "pathboost": ["paper_results/raw", "PathBoost_results", "namshub_results/PathBoost_results"],
+    "gnn": ["paper_results/raw", "GNN_results", "namshub_results/GNN_results"],
+    "kernel": ["paper_results/raw", "Kernel_results", "namshub_results/Kernel_results"],
+    "regression": ["paper_results/raw", "."],
 }
 
 FILE_GLOB = {
@@ -49,7 +52,10 @@ SENTINELS = {"FAILED", "TIMEOUT", ""}
 
 # Aggregated tables kept alongside the raw runs. When a raw run file is no
 # longer available, a published value may still be traceable to one of these.
-WIDE_SOURCES = ["results_csv_files/merged_results_enriched_and_modified.csv"]
+WIDE_SOURCES = [
+    "paper_results/raw/merged_results_enriched_and_modified.csv",
+    "results_csv_files/merged_results_enriched_and_modified.csv",
+]
 
 # Column carrying each Table 2 method inside the aggregated tables.
 WIDE_COLUMN = {
@@ -296,7 +302,8 @@ def main():
 
     extra = args.extra_dir
     print("Tracing published values to stored runs")
-    print(f"  searching: {', '.join(sum(DEFAULT_DIRS.values(), []) + extra)}\n")
+    searched = list(dict.fromkeys(sum(DEFAULT_DIRS.values(), []) + extra))
+    print(f"  searching: {', '.join(searched)}\n")
 
     rows2, t2, n2 = trace_table(TABLE2, lambda k: CSV_METRIC[k], extra, "Table 2")
     rows3, t3, n3 = trace_table(

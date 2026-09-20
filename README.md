@@ -55,10 +55,7 @@ source .venv/bin/activate          # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 
 # Optional, needed only for the graph-kernel baselines (see below)
-cd tudataset/tud_benchmark/kernel_baselines
-g++ -O3 -shared -std=c++11 -fPIC $(python3 -m pybind11 --includes) \
-    kernel_baselines.cpp src/*cpp -o ../kernel_baselines$(python3-config --extension-suffix)
-cd -
+./build_kernels.sh
 
 # Download the datasets used in the paper
 python download_datasets.py --paper
@@ -143,29 +140,34 @@ sudo apt install g++ libeigen3-dev      # Debian / Ubuntu
 brew install eigen                      # macOS
 ```
 
-Then build:
+Then, with the virtual environment active:
+
+```bash
+./build_kernels.sh
+```
+
+The script locates the `eigen3` headers (via `pkg-config`, falling back to the usual
+Homebrew and Linux locations), picks the right compiler flags for your platform, builds
+`tudataset/tud_benchmark/kernel_baselines<suffix>.so` and verifies that it imports. If
+eigen lives somewhere unusual, pass it explicitly:
+
+```bash
+EIGEN_FLAGS=-I/path/to/eigen3 ./build_kernels.sh
+```
+
+Equivalent manual command, if you prefer:
 
 ```bash
 cd tudataset/tud_benchmark/kernel_baselines
-
-# Linux
-g++ -O3 -shared -std=c++11 -fPIC $(python3 -m pybind11 --includes) \
-    kernel_baselines.cpp src/*cpp -o ../kernel_baselines$(python3-config --extension-suffix)
-
-# macOS
-g++ -O3 -shared -std=c++11 -undefined dynamic_lookup $(python3 -m pybind11 --includes) \
-    kernel_baselines.cpp src/*cpp -o ../kernel_baselines$(python3-config --extension-suffix)
+g++ -O3 -shared -std=c++17 -fPIC $(pkg-config --cflags eigen3) $(python -m pybind11 --includes) \
+    kernel_baselines.cpp src/*.cpp -o ../kernel_baselines$(python-config --extension-suffix)
 ```
 
-Verify:
+On macOS replace `-fPIC` with `-undefined dynamic_lookup`. Note `-std=c++17`: eigen 5
+requires at least C++14, whereas the upstream TUDataset instructions say C++11.
 
-```bash
-python -c "import tudataset.tud_benchmark.kernel_baselines as kb; print(kb.compute_wl_1_dense)"
-```
-
-If the compiler cannot find the `eigen3` headers, adjust the include paths at the top of
-`kernel_baselines.cpp`, `kernel_baselines/src/AuxiliaryMethods.h` and
-`kernel_baselines/src/Graph.cpp`.
+The compiled extension is platform- and Python-version-specific and is not committed;
+build it once per environment.
 
 ## Data
 
@@ -421,6 +423,7 @@ CSVs into the comparison tables, win/loss summaries and charts.
 ├── dataset_analysis.py                  # dataset characteristics   (Table 1)
 ├── download_datasets.py                 # fetch TU datasets
 ├── reproduce_paper.sh                   # one entry point for all of the above
+├── build_kernels.sh                     # compile the C++ graph kernels
 ├── tools/collect_paper_results.py       # rebuild + audit paper_results/
 ├── paper_results/                       # published numbers and their provenance
 ├── shared/                              # CLI, constants, CSV writer, timeout, imports
@@ -459,9 +462,19 @@ only uses datasets already downloaded. Name the dataset explicitly, or run
 `python download_datasets.py --paper` first. `--no-download` restores the old skip
 behaviour for batch jobs on a shared dataset directory.
 
-**`ModuleNotFoundError: kernel_baselines`** — the C++ extension has not been compiled; see
-[Building the graph kernels](#building-the-graph-kernels). A binary built on one platform
-or Python version will not load on another.
+**`ModuleNotFoundError: kernel_baselines`** — the C++ extension has not been compiled; run
+`./build_kernels.sh`. A binary built on one platform or Python version will not load on
+another.
+
+**`Eigen/Sparse file not found`, or eigen errors about `enable_if_t`** — `./build_kernels.sh`
+handles both (it passes the right `-I` and compiles with C++17). If you are invoking `g++`
+by hand, see [Building the graph kernels](#building-the-graph-kernels).
+
+**All kernels report `FAILED - Process terminated without result` and print
+`!!! Unable to open file 1 !!!`** — the C++ code resolves dataset paths relative to the
+working directory. `run_kernel.py` switches to `tudataset/tud_benchmark/` for the duration
+of the computation, so this should no longer happen; if it does, check that the dataset
+exists under `tudataset/tud_benchmark/datasets/<name>/<name>/raw/`.
 
 **`CUDA not available`** — pass `--device cpu`, or install a CUDA build of PyTorch.
 

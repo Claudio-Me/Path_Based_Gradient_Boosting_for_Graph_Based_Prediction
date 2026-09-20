@@ -1,49 +1,49 @@
 Table,Dataset,PaperName,Method,Published_Mean,Published_Std,Stored_Mean,Stored_Std,Source_File,Status
 Table 2,AIDS,AIDS,PathBoost,99.33,0.09,,,,NOT TRACED
-Table 2,AIDS,AIDS,GINE (GNN),96.66,0.15,96.66,0.15,GNN_results/GNN_Performance_20260225_190031.csv,traced
-Table 2,AIDS,AIDS,Weisfeiler-Lehman subtree kernel,96.42,0.33,96.42,0.33,results_csv_files/merged_results_enriched_and_modified.csv,traced
+Table 2,AIDS,AIDS,GINE (GNN),96.66,0.15,96.66,0.15,paper_results/raw/GNN_Performance_20260225_190031.csv,traced
+Table 2,AIDS,AIDS,Weisfeiler-Lehman subtree kernel,96.42,0.33,96.42,0.33,paper_results/raw/merged_results_enriched_and_modified.csv,traced
 Table 2,AIDS,AIDS,Graphlet kernel,99.04,0.09,,,,NOT TRACED
-Table 2,AIDS,AIDS,Shortest-path kernel,99.02,0.11,99.02,0.11,results_csv_files/merged_results_enriched_and_modified.csv,traced
+Table 2,AIDS,AIDS,Shortest-path kernel,99.02,0.11,99.02,0.11,paper_results/raw/merged_results_enriched_and_modified.csv,traced
 Table 2,BZR,BZR,PathBoost,86.76,0.55,,,,NOT TRACED
 Table 2,BZR,BZR,GINE (GNN),82.51,1.37,,,,NOT TRACED
-Table 2,BZR,BZR,Weisfeiler-Lehman subtree kernel,86.90,1.20,86.90,1.20,results_csv_files/merged_results_enriched_and_modified.csv,traced
-Table 2,BZR,BZR,Graphlet kernel,82.30,0.91,82.30,0.91,results_csv_files/merged_results_enriched_and_modified.csv,traced
-Table 2,BZR,BZR,Shortest-path kernel,82.30,0.91,82.30,0.91,results_csv_files/merged_results_enriched_and_modified.csv,traced
+Table 2,BZR,BZR,Weisfeiler-Lehman subtree kernel,86.90,1.20,86.90,1.20,paper_results/raw/merged_results_enriched_and_modified.csv,traced
+Table 2,BZR,BZR,Graphlet kernel,82.30,0.91,82.30,0.91,paper_results/raw/merged_results_enriched_and_modified.csv,traced
+Table 2,BZR,BZR,Shortest-path kernel,82.30,0.91,82.30,0.91,paper_results/raw/merged_results_enriched_and_modified.csv,traced
 Table 2,DHFR,DHFR,PathBoost,78.19,0.76,,,,NOT TRACED
 Table 2,DHFR,DHFR,GINE (GNN),80.03,1.08,,,,NOT TRACED
-Table 2,DHFR,DHFR,Weisfeiler-Lehman subtree kernel,81.45,1.22,81.45,1.22,results_csv_files/merged_results_enriched_and_modified.csv,traced
-Table 2,DHFR,DHFR,Graphlet kernel,74.52,0.72,74.52,0.72,results_csv_files/merged_results_enriched_and_modified.csv,traced
-Table 2,DHFR,DHFR,Shortest-path kernel,74.43,0.90,74.43,0.90,results_csv_files/merged_results_enriched_and_modified.csv,traced
+Table 2,DHFR,DHFR,Weisfeiler-Lehman subtree kernel,81.45,1.22,81.45,1.22,paper_results/raw/merged_results_enriched_and_modified.csv,traced
+Table 2,DHFR,DHFR,Graphlet kernel,74.52,0.72,74.52,0.72,paper_results/raw/merged_results_enriched_and_modified.csv,traced
+Table 2,DHFR,DHFR,Shortest-path kernel,74.43,0.90,74.43,0.90,paper_results/raw/merged_results_enriched_and_modified.csv,traced
 Table 2,MUTAG,MUTAG,PathBoost,89.11,1.08,,,,NOT TRACED
 Table 2,MUTAG,MUTAG,GINE (GNN),82.83,2.18,,,,NOT TRACED
-Table 2,MUTAG,MUTAG,Weisfeiler-Lehman subtree kernel,76.35,2.11,76.35,2.11,results_csv_files/merged_results_enriched_and_modified.csv,traced
-Table 2,MUTAG,MUTAG,Graphlet kernel,85.32,0.82,85.32,0.82,results_csv_files/merged_results_enriched_and_modified.csv,traced
-Table 2,MUTAG,MUTAG,Shortest-path kernel,85.32,0.82,85.32,0.82,results_csv_files/merged_results_enriched_and_modified.csv,traced
+Table 2,MUTAG,MUTAG,Weisfeiler-Lehman subtree kernel,76.35,2.11,76.35,2.11,paper_results/raw/merged_results_enriched_and_modified.csv,traced
+Table 2,MUTAG,MUTAG,Graphlet kernel,85.32,0.82,85.32,0.82,paper_results/raw/merged_results_enriched_and_modified.csv,traced
+Table 2,MUTAG,MUTAG,Shortest-path kernel,85.32,0.82,85.32,0.82,paper_results/raw/merged_results_enriched_and_modified.csv,traced
 Table 2,PROTEINS_full,PROTEINS_full,PathBoost,79.00,0.51,,,,NOT TRACED
 Table 2,PROTEINS_full,PROTEINS_full,GINE (GNN),71.50,1.21,,,,NOT TRACED
-Table 2,PROTEINS_full,PROTEINS_full,Weisfeiler-Lehman subtree kernel,73.06,0.71,73.06,0.71,results_csv_files/merged_results_enriched_and_modified.csv,traced
+Table 2,PROTEINS_full,PROTEINS_full,Weisfeiler-Lehman subtree kernel,73.06,0.71,73.06,0.71,paper_results/raw/merged_results_enriched_and_modified.csv,traced
 Table 2,PROTEINS_full,PROTEINS_full,Graphlet kernel,time limit,,,,,time limit
 Table 2,PROTEINS_full,PROTEINS_full,Shortest-path kernel,time limit,,,,,time limit
 Table 2,PTC_FM,PTC_FM,PathBoost,61.80,0.95,,,,NOT TRACED
 Table 2,PTC_FM,PTC_FM,GINE (GNN),59.55,1.87,,,,NOT TRACED
-Table 2,PTC_FM,PTC_FM,Weisfeiler-Lehman subtree kernel,62.84,1.74,62.84,1.74,results_csv_files/merged_results_enriched_and_modified.csv,traced
-Table 2,PTC_FM,PTC_FM,Graphlet kernel,56.64,1.72,56.64,1.72,results_csv_files/merged_results_enriched_and_modified.csv,traced
-Table 2,PTC_FM,PTC_FM,Shortest-path kernel,56.64,1.72,56.64,1.72,results_csv_files/merged_results_enriched_and_modified.csv,traced
+Table 2,PTC_FM,PTC_FM,Weisfeiler-Lehman subtree kernel,62.84,1.74,62.84,1.74,paper_results/raw/merged_results_enriched_and_modified.csv,traced
+Table 2,PTC_FM,PTC_FM,Graphlet kernel,56.64,1.72,56.64,1.72,paper_results/raw/merged_results_enriched_and_modified.csv,traced
+Table 2,PTC_FM,PTC_FM,Shortest-path kernel,56.64,1.72,56.64,1.72,paper_results/raw/merged_results_enriched_and_modified.csv,traced
 Table 2,SYNTHETIC,SYNTHETIC,PathBoost,62.27,1.67,,,,NOT TRACED
-Table 2,SYNTHETIC,SYNTHETIC,GINE (GNN),48.53,1.86,48.53,1.96,GNN_results/GNN_Performance_20260124_210940.csv,mean only
-Table 2,SYNTHETIC,SYNTHETIC,Weisfeiler-Lehman subtree kernel,45.53,2.62,45.53,2.62,results_csv_files/merged_results_enriched_and_modified.csv,traced
-Table 2,SYNTHETIC,SYNTHETIC,Graphlet kernel,45.73,2.53,45.73,2.53,results_csv_files/merged_results_enriched_and_modified.csv,traced
-Table 2,SYNTHETIC,SYNTHETIC,Shortest-path kernel,45.73,2.53,45.73,2.53,results_csv_files/merged_results_enriched_and_modified.csv,traced
+Table 2,SYNTHETIC,SYNTHETIC,GINE (GNN),48.53,1.86,48.53,1.96,paper_results/raw/GNN_Performance_20260124_210940.csv,mean only
+Table 2,SYNTHETIC,SYNTHETIC,Weisfeiler-Lehman subtree kernel,45.53,2.62,45.53,2.62,paper_results/raw/merged_results_enriched_and_modified.csv,traced
+Table 2,SYNTHETIC,SYNTHETIC,Graphlet kernel,45.73,2.53,45.73,2.53,paper_results/raw/merged_results_enriched_and_modified.csv,traced
+Table 2,SYNTHETIC,SYNTHETIC,Shortest-path kernel,45.73,2.53,45.73,2.53,paper_results/raw/merged_results_enriched_and_modified.csv,traced
 Table 2,Tox21_ARE_evaluation,Tox21_ARE_eval,PathBoost,83.37,0.18,,,,NOT TRACED
 Table 2,Tox21_ARE_evaluation,Tox21_ARE_eval,GINE (GNN),81.95,0.76,,,,NOT TRACED
-Table 2,Tox21_ARE_evaluation,Tox21_ARE_eval,Weisfeiler-Lehman subtree kernel,81.27,1.33,81.27,1.33,results_csv_files/merged_results_enriched_and_modified.csv,traced
-Table 2,Tox21_ARE_evaluation,Tox21_ARE_eval,Graphlet kernel,82.24,0.50,82.24,0.50,results_csv_files/merged_results_enriched_and_modified.csv,traced
-Table 2,Tox21_ARE_evaluation,Tox21_ARE_eval,Shortest-path kernel,82.54,0.51,82.54,0.51,results_csv_files/merged_results_enriched_and_modified.csv,traced
+Table 2,Tox21_ARE_evaluation,Tox21_ARE_eval,Weisfeiler-Lehman subtree kernel,81.27,1.33,81.27,1.33,paper_results/raw/merged_results_enriched_and_modified.csv,traced
+Table 2,Tox21_ARE_evaluation,Tox21_ARE_eval,Graphlet kernel,82.24,0.50,82.24,0.50,paper_results/raw/merged_results_enriched_and_modified.csv,traced
+Table 2,Tox21_ARE_evaluation,Tox21_ARE_eval,Shortest-path kernel,82.54,0.51,82.54,0.51,paper_results/raw/merged_results_enriched_and_modified.csv,traced
 Table 2,Tox21_ARE_testing,Tox21_ARE_test,PathBoost,79.40,0.85,,,,NOT TRACED
 Table 2,Tox21_ARE_testing,Tox21_ARE_test,GINE (GNN),79.21,1.89,,,,NOT TRACED
-Table 2,Tox21_ARE_testing,Tox21_ARE_test,Weisfeiler-Lehman subtree kernel,78.06,2.13,78.06,2.13,results_csv_files/merged_results_enriched_and_modified.csv,traced
-Table 2,Tox21_ARE_testing,Tox21_ARE_test,Graphlet kernel,80.63,1.24,80.63,1.24,results_csv_files/merged_results_enriched_and_modified.csv,traced
-Table 2,Tox21_ARE_testing,Tox21_ARE_test,Shortest-path kernel,80.20,1.26,80.20,1.26,results_csv_files/merged_results_enriched_and_modified.csv,traced
+Table 2,Tox21_ARE_testing,Tox21_ARE_test,Weisfeiler-Lehman subtree kernel,78.06,2.13,78.06,2.13,paper_results/raw/merged_results_enriched_and_modified.csv,traced
+Table 2,Tox21_ARE_testing,Tox21_ARE_test,Graphlet kernel,80.63,1.24,80.63,1.24,paper_results/raw/merged_results_enriched_and_modified.csv,traced
+Table 2,Tox21_ARE_testing,Tox21_ARE_test,Shortest-path kernel,80.20,1.26,80.20,1.26,paper_results/raw/merged_results_enriched_and_modified.csv,traced
 Table 2,Tox21_ARE_training,Tox21_ARE_train,PathBoost,84.79,0.06,,,,NOT TRACED
 Table 2,Tox21_ARE_training,Tox21_ARE_train,GINE (GNN),83.43,1.32,,,,NOT TRACED
 Table 2,Tox21_ARE_training,Tox21_ARE_train,Weisfeiler-Lehman subtree kernel,time limit,,,,,time limit
@@ -51,12 +51,12 @@ Table 2,Tox21_ARE_training,Tox21_ARE_train,Graphlet kernel,84.74,0.08,,,,NOT TRA
 Table 2,Tox21_ARE_training,Tox21_ARE_train,Shortest-path kernel,84.74,0.08,,,,NOT TRACED
 Table 2,Tox21_MMP_testing,Tox21_MMP_test,PathBoost,85.84,0.89,,,,NOT TRACED
 Table 2,Tox21_MMP_testing,Tox21_MMP_test,GINE (GNN),82.01,2.88,,,,NOT TRACED
-Table 2,Tox21_MMP_testing,Tox21_MMP_test,Weisfeiler-Lehman subtree kernel,86.31,2.11,86.31,2.11,results_csv_files/merged_results_enriched_and_modified.csv,traced
-Table 2,Tox21_MMP_testing,Tox21_MMP_test,Graphlet kernel,82.47,1.53,82.47,1.53,results_csv_files/merged_results_enriched_and_modified.csv,traced
-Table 2,Tox21_MMP_testing,Tox21_MMP_test,Shortest-path kernel,82.34,1.20,82.34,1.20,results_csv_files/merged_results_enriched_and_modified.csv,traced
+Table 2,Tox21_MMP_testing,Tox21_MMP_test,Weisfeiler-Lehman subtree kernel,86.31,2.11,86.31,2.11,paper_results/raw/merged_results_enriched_and_modified.csv,traced
+Table 2,Tox21_MMP_testing,Tox21_MMP_test,Graphlet kernel,82.47,1.53,82.47,1.53,paper_results/raw/merged_results_enriched_and_modified.csv,traced
+Table 2,Tox21_MMP_testing,Tox21_MMP_test,Shortest-path kernel,82.34,1.20,82.34,1.20,paper_results/raw/merged_results_enriched_and_modified.csv,traced
 Table 2,Tox21_MMP_training,Tox21_MMP_train,PathBoost,85.95,0.18,,,,NOT TRACED
 Table 2,Tox21_MMP_training,Tox21_MMP_train,GINE (GNN),time limit,,,,,time limit
-Table 2,Tox21_MMP_training,Tox21_MMP_train,Weisfeiler-Lehman subtree kernel,91.14,0.19,91.14,0.19,results_csv_files/merged_results_enriched_and_modified.csv,traced
+Table 2,Tox21_MMP_training,Tox21_MMP_train,Weisfeiler-Lehman subtree kernel,91.14,0.19,91.14,0.19,paper_results/raw/merged_results_enriched_and_modified.csv,traced
 Table 2,Tox21_MMP_training,Tox21_MMP_train,Graphlet kernel,84.96,0.11,,,,NOT TRACED
 Table 2,Tox21_MMP_training,Tox21_MMP_train,Shortest-path kernel,84.99,0.12,,,,NOT TRACED
 Table 3,AIDS,AIDS,PathBoost,98.69,0.12,,,,NOT TRACED

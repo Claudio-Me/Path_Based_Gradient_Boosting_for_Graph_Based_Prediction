@@ -6,12 +6,10 @@
 #ifndef WLFAST_GRAPH_H
 #define WLFAST_GRAPH_H
 
-#ifdef __linux__
-#include <eigen3/Eigen/Sparse>
-#else
+// build_kernels.sh passes -I for the eigen3 headers on every platform, so the
+// eigen3/ prefix upstream used on Linux is no longer needed (and would break
+// with that -I in place).
 #include <Eigen/Sparse>
-//#include "/usr/local/include/eigen3/Eigen/Sparse"
-#endif
 
 
 

@@ -17,15 +17,16 @@ using Eigen::MatrixXd;
 using namespace std;
 using namespace GraphLibrary;
 
-#ifdef __linux__
-#include <eigen3/Eigen/Dense>
-#include <eigen3/Eigen/Sparse>
-#include <eigen3/unsupported/Eigen/src/SparseExtra/MarketIO.h>
-#else
+// Include paths assume the eigen3 headers are on the include path; build_kernels.sh
+// passes -I for them, so the eigen3/ prefix used upstream is no longer needed.
+//
+// Upstream included <unsupported/Eigen/src/SparseExtra/MarketIO.h> directly.
+// Eigen 5 rejects includes that reach into src/, and the Matrix Market readers
+// are not used anywhere in this code, so the include is taken through the
+// supported public header instead.
 #include <Eigen/Dense>
 #include <Eigen/Sparse>
-#include <unsupported/Eigen/src/SparseExtra/MarketIO.h>
-#endif
+#include <unsupported/Eigen/SparseExtra>
 
 namespace AuxiliaryMethods {
     // Simple function for converting a comma separated string into a vector of integers.
