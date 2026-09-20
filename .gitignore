@@ -65,3 +65,6 @@ tudataset/tud_benchmark/kernel_baselines.cpython-*.so
 !paper_results/**
 !subsample_dataset/*_results.json
 !subsample_dataset/*_learning_curve.png
+
+# Correspondence drafts, not part of the published repository
+response_to_editor.md
