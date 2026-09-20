@@ -1,6 +1,7 @@
 
 import sys
-sys.path.insert(0, '/Users/popcorn/PycharmProjects/Different_datasets/tudataset/tud_benchmark')
+import os
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import kernel_baselines as kb
 from idlelib.editor import darwin
 import auxiliarymethods.auxiliary_methods as aux
