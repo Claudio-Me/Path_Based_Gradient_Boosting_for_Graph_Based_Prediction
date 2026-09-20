@@ -141,7 +141,9 @@ def pathboost_regression_evaluation(
     """
     from sklearn.model_selection import KFold, GridSearchCV
     from sklearn.tree import DecisionTreeRegressor
-    from extended_path_boost import SequentialPathBoost
+    from shared import get_regressor
+
+    SequentialPathBoost = get_regressor()
 
     base_seed = 42 if cv_seed is None else int(cv_seed)
     tag = experiment_name or "experiment"

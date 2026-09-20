@@ -1,10 +1,12 @@
 #!/bin/bash
+# SLURM wrapper around download_datasets.py (Fox HPC).
+# For a normal machine just run:  python download_datasets.py --paper --regression
 #SBATCH --account=ec12
 #SBATCH --job-name=download_data
 #SBATCH --partition=normal
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=4
-#SBATCH --time=01:00:00
+#SBATCH --time=02:00:00
 #SBATCH --mem-per-cpu=8G
 #SBATCH --output=logs/%x_%j.log
 #SBATCH --error=logs/%x_%j.log
@@ -12,18 +14,11 @@
 set -e
 mkdir -p logs
 
-cd $SLURM_SUBMIT_DIR
-source .different_datasets_venv/bin/activate
+cd "${SLURM_SUBMIT_DIR:-$(dirname "$0")}"
+if [ -f .different_datasets_venv/bin/activate ]; then
+    source .different_datasets_venv/bin/activate
+elif [ -f venv/bin/activate ]; then
+    source venv/bin/activate
+fi
 
-python -c "
-from torch_geometric.datasets import TUDataset
-datasets = ['aspirin','benzene','ethanol','malonaldehyde','naphthalene','toluene','uracil','ZINC_full','ZINC_test','ZINC_train','ZINC_val']
-for name in datasets:
-    print(f'Downloading {name}...', end=' ', flush=True)
-    try:
-        TUDataset(root=f'tudataset/tud_benchmark/datasets/{name}', name=name)
-        print('OK')
-    except Exception as e:
-        print(f'FAILED: {e}')
-print('All done.')
-"
+python download_datasets.py --paper --regression "$@"

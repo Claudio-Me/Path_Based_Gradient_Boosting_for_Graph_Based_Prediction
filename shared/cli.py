@@ -39,7 +39,7 @@ Examples:
         '--timeout',
         type=int,
         default=DEFAULT_TIMEOUT,
-        help=f'Timeout per dataset in seconds (default: {DEFAULT_TIMEOUT} = 20 hours)'
+        help=f'Timeout per dataset in seconds (default: {DEFAULT_TIMEOUT}, 0 = no limit)'
     )
 
     if supports_device:
@@ -59,6 +59,20 @@ Examples:
     )
 
     parser.add_argument(
+        '--quick',
+        action='store_true',
+        help='Quick mode: reduced CV and hyperparameter grid, for checking that '
+             'the pipeline runs. Does NOT reproduce the published tables.'
+    )
+
+    parser.add_argument(
+        '--no-download',
+        action='store_true',
+        help='Do not download missing datasets; skip them instead '
+             '(useful for batch/SLURM runs on a shared dataset directory).'
+    )
+
+    parser.add_argument(
         '--verbose',
         '-v',
         action='store_true',
@@ -68,26 +82,40 @@ Examples:
     return parser
 
 
-def validate_datasets(dataset_names: List[str]) -> List[str]:
+def validate_datasets(dataset_names: List[str], download: bool = True) -> List[str]:
     """
-    Validate dataset names exist in the datasets directory.
+    Validate dataset names, downloading any that are not present yet.
+
+    TU datasets are not distributed with this repository; they are fetched from
+    the TUDatasets collection through PyTorch Geometric on first use. A fresh
+    clone therefore has an empty dataset directory, so by default a missing
+    dataset is downloaded rather than skipped.
 
     Args:
         dataset_names: List of dataset names to validate.
                       If empty, returns all known datasets.
+        download: Download missing datasets (default). When False, missing
+                  datasets are reported and skipped.
 
     Returns:
-        List of valid dataset names. Warns about invalid ones.
+        List of valid dataset names. Warns about ones that could not be obtained.
     """
     base_dir = get_base_dir()
 
     if not dataset_names:
-        # Return all datasets that exist
+        # No explicit selection: only run on what is already available locally.
+        # Downloading all 80+ datasets implicitly would be a surprising side effect.
         valid = []
         for name in ALL_DATASETS:
             dataset_path = os.path.join(base_dir, name)
             if os.path.exists(dataset_path):
                 valid.append(name)
+        if not valid:
+            print(
+                "No datasets found locally. Download them first, e.g.:\n"
+                "    python download_datasets.py --paper\n"
+                "or name the datasets explicitly to have them downloaded on demand."
+            )
         return valid
 
     valid = []
@@ -95,7 +123,17 @@ def validate_datasets(dataset_names: List[str]) -> List[str]:
         dataset_path = os.path.join(base_dir, name)
         if os.path.exists(dataset_path):
             valid.append(name)
-        else:
+            continue
+
+        if not download:
             print(f"WARNING: Dataset '{name}' not found at {dataset_path}, skipping.")
+            continue
+
+        try:
+            from utils import ensure_dataset_downloaded
+            ensure_dataset_downloaded(name, verbose=True)
+            valid.append(name)
+        except Exception as exc:
+            print(f"WARNING: Dataset '{name}' could not be downloaded ({exc}), skipping.")
 
     return valid

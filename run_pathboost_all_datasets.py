@@ -3,7 +3,9 @@ import numpy as np
 import uuid
 import networkx as nx
 from sklearn.model_selection import GridSearchCV
-from extended_path_boost import SequentialPathBoostClassifier
+from shared import get_classifier
+
+SequentialPathBoostClassifier = get_classifier()
 
 from tudataset.tud_benchmark.auxiliarymethods.datasets import get_dataset
 from dataset_analysis import get_summary_table

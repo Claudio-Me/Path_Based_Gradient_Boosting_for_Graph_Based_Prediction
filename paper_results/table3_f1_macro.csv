@@ -1,0 +1,13 @@
+Dataset,PaperName,PathBoost,GINE (GNN)
+AIDS,AIDS,98.69 ± 0.12,time limit
+BZR,BZR,70.81 ± 1.81,69.29 ± 2.32
+DHFR,DHFR,75.00 ± 5.00,78.60 ± 4.70
+MUTAG,MUTAG,83.86 ± 2.11,80.46 ± 3.29
+PROTEINS_full,PROTEINS_full,69.14 ± 1.04,time limit
+PTC_FM,PTC_FM,51.72 ± 1.91,53.28 ± 2.71
+SYNTHETIC,SYNTHETIC,62.00 ± 19.00,32.00 ± 0.90
+Tox21_ARE_evaluation,Tox21_ARE_eval,51.05 ± 1.99,52.69 ± 1.67
+Tox21_ARE_testing,Tox21_ARE_test,54.39 ± 1.89,59.11 ± 3.48
+Tox21_ARE_training,Tox21_ARE_train,50.16 ± 0.71,time limit
+Tox21_MMP_testing,Tox21_MMP_test,62.14 ± 3.32,61.14 ± 4.69
+Tox21_MMP_training,Tox21_MMP_train,60.83 ± 0.89,time limit

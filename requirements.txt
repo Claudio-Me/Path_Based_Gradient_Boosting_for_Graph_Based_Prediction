@@ -1,5 +1,19 @@
-# Requirements for Graph Classification Research Codebase
-# Python 3.10+ required
+# Requirements for "Path-Based Gradient Boosting for Graph-Level Prediction"
+#
+# Python 3.10+ (3.12 was used for the reported experiments).
+#
+#   pip install -r requirements.txt
+#
+# For the exact versions of the machine that produced the published numbers,
+# use requirements-lock.txt instead.
+
+# =============================================================================
+# PathBoost - the method proposed in the paper
+# =============================================================================
+# Source: https://github.com/Claudio-Me/extended_path_boost
+# Releases <= 1.6 published the same estimators under the module name
+# `extended_path_boost`; the scripts accept either spelling.
+path_boost==2.1.0
 
 # =============================================================================
 # Core Scientific Computing
@@ -11,12 +25,12 @@ pandas>=2.0.0
 # =============================================================================
 # Machine Learning
 # =============================================================================
-scikit-learn>=1.3.0
+scikit-learn>=1.4.2
 
 # =============================================================================
-# Deep Learning - PyTorch Ecosystem
+# Deep Learning - PyTorch Ecosystem (GINE baseline)
 # =============================================================================
-# Note: Install PyTorch first according to your CUDA version:
+# Install PyTorch first if you need a specific CUDA build:
 # https://pytorch.org/get-started/locally/
 torch>=2.0.0
 torch-geometric>=2.4.0
@@ -27,23 +41,24 @@ torch-geometric>=2.4.0
 networkx>=3.0
 
 # =============================================================================
+# Graph kernel baselines (C++ extension, see README "Building the graph kernels")
+# =============================================================================
+pybind11>=2.10.0
+
+# =============================================================================
 # Utilities
 # =============================================================================
 tqdm>=4.65.0
 joblib>=1.3.0
-pybind11>=2.10.0
 
 # =============================================================================
-# Visualization (optional, for plotting)
+# Visualization and result analysis
 # =============================================================================
 matplotlib>=3.7.0
+seaborn>=0.13.0
+itables>=2.0.0
 
 # =============================================================================
-# Open Graph Benchmark (optional, for OGB datasets)
+# Open Graph Benchmark (optional, only for OGB_comparison.py)
 # =============================================================================
 ogb>=1.3.6
-
-# =============================================================================
-# PathBoost (internal package)
-# =============================================================================
-# extended_path_boost should be installed separately if not in this repo

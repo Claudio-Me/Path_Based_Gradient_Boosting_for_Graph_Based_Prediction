@@ -14,6 +14,7 @@ Usage:
 Output:
     Kernel_results/Kernel_Performance_<timestamp>.csv
 """
+import contextlib
 import os
 import sys
 import time
@@ -36,6 +37,25 @@ from tudataset.tud_benchmark.auxiliarymethods.kernel_evaluation import (
     linear_svm_evaluation
 )
 import tudataset.tud_benchmark.kernel_baselines as kb
+
+
+@contextlib.contextmanager
+def _tud_benchmark_cwd():
+    """Run inside tudataset/tud_benchmark/.
+
+    The C++ kernel extension resolves dataset files as
+    "./datasets/<name>/<name>/raw/<name>_A.txt", relative to the working
+    directory, so it only finds them when called from there. Everything else in
+    this script uses absolute paths, so switching for the duration of the kernel
+    computation is safe.
+    """
+    previous = os.getcwd()
+    target = os.path.dirname(get_base_dir())  # .../tudataset/tud_benchmark
+    os.chdir(target)
+    try:
+        yield
+    finally:
+        os.chdir(previous)
 
 
 # Kernel evaluation functions (extracted from kernel_baseline_all_datasets.py)
@@ -121,7 +141,8 @@ KERNEL_FUNCS = [
 ]
 
 
-def run_all_kernels(dataset_name: str, timeout_per_kernel: int = 10286, kernel_funcs=None) -> dict:
+def run_all_kernels(dataset_name: str, timeout_per_kernel: int = 10286, kernel_funcs=None,
+                    num_reps: int = 10) -> dict:
     """
     Run all kernel methods on a dataset.
 
@@ -131,6 +152,8 @@ def run_all_kernels(dataset_name: str, timeout_per_kernel: int = 10286, kernel_f
     Args:
         dataset_name: Name of the TU dataset
         timeout_per_kernel: Timeout per individual kernel (default: ~2.86 hours)
+        kernel_funcs: Subset of (name, function) pairs to run (default: all)
+        num_reps: Number of CV repetitions (default: 10, as in the paper)
 
     Returns:
         Dict mapping kernel_name to (accuracy, std_top10, std_all100)
@@ -148,35 +171,35 @@ def run_all_kernels(dataset_name: str, timeout_per_kernel: int = 10286, kernel_f
         os.path.join(dataset_dir, f"{dataset_name}_edge_attributes.txt")
     )
 
-    num_reps = 10
     use_labels = True
 
     active_funcs = kernel_funcs if kernel_funcs is not None else KERNEL_FUNCS
     results = {}
-    for kernel_name, kernel_func in active_funcs:
-        print(f"  Running {kernel_name}...")
+    with _tud_benchmark_cwd():
+        for kernel_name, kernel_func in active_funcs:
+            print(f"  Running {kernel_name}...")
 
-        start_time = time.time()
-        result, timed_out, error = run_with_timeout(
-            kernel_func,
-            args=(dataset_name, num_reps, use_labels, has_edge_labels),
-            timeout_sec=timeout_per_kernel
-        )
-        elapsed_time = time.time() - start_time
+            start_time = time.time()
+            result, timed_out, error = run_with_timeout(
+                kernel_func,
+                args=(dataset_name, num_reps, use_labels, has_edge_labels),
+                timeout_sec=timeout_per_kernel
+            )
+            elapsed_time = time.time() - start_time
 
-        if timed_out:
-            print(f"  {kernel_name}: TIMEOUT")
-            results[kernel_name] = ("TIMEOUT", "TIMEOUT", "TIMEOUT", None)
-        elif error:
-            print(f"  {kernel_name}: FAILED - {error}")
-            results[kernel_name] = ("FAILED", "FAILED", "FAILED", None)
-        elif result is None:
-            print(f"  {kernel_name}: No result")
-            results[kernel_name] = ("FAILED", "FAILED", "FAILED", None)
-        else:
-            # result is (accuracy, std_10, std_100), add elapsed_time
-            print(f"  {kernel_name}: accuracy={result[0]:.4f} (time={elapsed_time:.2f}s)")
-            results[kernel_name] = (*result, elapsed_time)
+            if timed_out:
+                print(f"  {kernel_name}: TIMEOUT")
+                results[kernel_name] = ("TIMEOUT", "TIMEOUT", "TIMEOUT", None)
+            elif error:
+                print(f"  {kernel_name}: FAILED - {error}")
+                results[kernel_name] = ("FAILED", "FAILED", "FAILED", None)
+            elif result is None:
+                print(f"  {kernel_name}: No result")
+                results[kernel_name] = ("FAILED", "FAILED", "FAILED", None)
+            else:
+                # result is (accuracy, std_10, std_100), add elapsed_time
+                print(f"  {kernel_name}: accuracy={result[0]:.4f} (time={elapsed_time:.2f}s)")
+                results[kernel_name] = (*result, elapsed_time)
 
     return results
 
@@ -194,7 +217,7 @@ def main():
     args = parser.parse_args()
 
     logger = setup_logging('kernel', args.verbose)
-    datasets = validate_datasets(args.datasets)
+    datasets = validate_datasets(args.datasets, download=not args.no_download)
 
     if not datasets:
         logger.error("No valid datasets to process")
@@ -221,7 +244,11 @@ def main():
         logger.info(f"Processing {dataset_name}...")
 
         try:
-            results = run_all_kernels(dataset_name, timeout_per_kernel, kernel_funcs=selected_funcs)
+            results = run_all_kernels(
+                dataset_name, timeout_per_kernel,
+                kernel_funcs=selected_funcs,
+                num_reps=2 if args.quick else 10,
+            )
 
             # Write results - one row per kernel method
             for kernel_name, result_tuple in results.items():

@@ -55,3 +55,13 @@ tudataset/tud_benchmark/kernel_baselines.cpython-*.so
 *.iml
 *.pdf
 *.png
+
+# -----------------------------------------------------------------------------
+# Reproducibility artifacts published with the paper
+# (the broad *.csv / *.txt / *.png rules above must not swallow these)
+# -----------------------------------------------------------------------------
+!requirements-lock.txt
+!paper_results/
+!paper_results/**
+!subsample_dataset/*_results.json
+!subsample_dataset/*_learning_curve.png

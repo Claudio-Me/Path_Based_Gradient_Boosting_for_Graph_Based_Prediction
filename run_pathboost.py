@@ -35,6 +35,16 @@ from tudataset.tud_benchmark.auxiliarymethods.datasets import get_dataset
 from utils import load_or_build_nx_graphs, find_categorical_node_attributes, preprocess_labels
 
 
+# Reduced grid for --quick: enough to exercise every code path, far too small
+# to reproduce Table 2.
+QUICK_PARAM_GRID = {
+    'learning_rate': [0.1],
+    'max_path_length': [3],
+    'kwargs_for_base_learner': [{'max_depth': 4}],
+    'n_iter': [100],
+}
+
+
 def pathboost_evaluation_with_auc(
     nx_graphs: List,
     labels: np.ndarray,
@@ -42,6 +52,7 @@ def pathboost_evaluation_with_auc(
     param_grid: Optional[Dict] = None,
     n_repeats: int = 10,
     cv_seed: Optional[int] = None,
+    n_folds: int = 10,
 ) -> Dict:
     """
     Run PathBoost GridSearchCV with ROC-AUC metric included.
@@ -56,6 +67,7 @@ def pathboost_evaluation_with_auc(
         param_grid: Hyperparameter grid for GridSearchCV
         n_repeats: Number of CV repetitions (default: 10)
         cv_seed: Random seed for reproducibility
+        n_folds: Number of folds per repetition (default: 10)
 
     Returns:
         Dict mapping metric name to (mean, std_top10, std_all100) tuple.
@@ -64,8 +76,10 @@ def pathboost_evaluation_with_auc(
     from sklearn.model_selection import KFold, GridSearchCV
     from sklearn.metrics import make_scorer, f1_score, recall_score, roc_auc_score
     from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
-    from extended_path_boost import SequentialPathBoostClassifier
+    from shared import get_classifier
     from dataset_analysis import dataset_prescreening
+
+    SequentialPathBoostClassifier = get_classifier()
 
     # Pre-screening (silent)
     dataset_prescreening(labels, dataset_name=dataset_name, show_plot=False, save_plot=False)
@@ -168,7 +182,7 @@ def pathboost_evaluation_with_auc(
     try:
         # Repeat cross-validation with different random seeds
         for rep in range(n_repeats):
-            cv = KFold(n_splits=10, shuffle=True, random_state=base_seed + rep)
+            cv = KFold(n_splits=n_folds, shuffle=True, random_state=base_seed + rep)
 
             grid = GridSearchCV(
                 estimator=base_estimator,
@@ -203,7 +217,7 @@ def pathboost_evaluation_with_auc(
                 best_score = grid.cv_results_[f'mean_test_{metric}'][best_index]
                 all_metrics_results[metric]['best_scores'].append(best_score)
 
-                for fold_idx in range(10):
+                for fold_idx in range(n_folds):
                     score_key = f'split{fold_idx}_test_{metric}'
                     all_metrics_results[metric]['fold_scores'].append(
                         grid.cv_results_[score_key][best_index]
@@ -245,7 +259,7 @@ def main():
     args = parser.parse_args()
 
     logger = setup_logging('pathboost', args.verbose)
-    datasets = validate_datasets(args.datasets)
+    datasets = validate_datasets(args.datasets, download=not args.no_download)
 
     if not datasets:
         logger.error("No valid datasets to process")
@@ -279,7 +293,12 @@ def main():
             result, timed_out, error = run_with_timeout(
                 pathboost_evaluation_with_auc,
                 args=(nx_graphs, labels, dataset_name),
-                kwargs={'cv_seed': CV_SEED, 'n_repeats': args.repetitions},
+                kwargs={
+                    'cv_seed': CV_SEED,
+                    'n_repeats': 2 if args.quick else args.repetitions,
+                    'n_folds': 3 if args.quick else 10,
+                    'param_grid': QUICK_PARAM_GRID if args.quick else None,
+                },
                 timeout_sec=args.timeout
             )
 

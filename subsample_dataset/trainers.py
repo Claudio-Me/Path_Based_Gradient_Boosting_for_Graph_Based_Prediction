@@ -19,7 +19,9 @@ def train_pathboost_cv(train_graphs, train_labels, test_graphs, test_labels, n_f
     Returns: test accuracy
     """
     from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
-    from extended_path_boost import SequentialPathBoostClassifier
+    from shared import get_classifier
+
+    SequentialPathBoostClassifier = get_classifier()
 
     # Preprocess labels to {0, 1}
     train_labels = preprocess_labels(np.array(train_labels))

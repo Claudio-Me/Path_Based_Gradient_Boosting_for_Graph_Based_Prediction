@@ -29,7 +29,8 @@ from shared import (
 )
 
 
-def run_gnn_evaluation(dataset_name: str, device: str, cv_seed: int = CV_SEED):
+def run_gnn_evaluation(dataset_name: str, device: str, cv_seed: int = CV_SEED,
+                       quick: bool = False):
     """
     Run GNN evaluation with device selection.
 
@@ -40,6 +41,7 @@ def run_gnn_evaluation(dataset_name: str, device: str, cv_seed: int = CV_SEED):
         dataset_name: Name of the TU dataset
         device: 'cpu', 'gpu', or 'cuda'
         cv_seed: Random seed for reproducibility
+        quick: Reduced architecture search and epoch budget (pipeline check only)
 
     Returns:
         Dict mapping metric to (mean, std_top10, std_all100)
@@ -77,12 +79,12 @@ def run_gnn_evaluation(dataset_name: str, device: str, cv_seed: int = CV_SEED):
     result = gnn_evaluation(
         GNNLayer,
         dataset_name,
-        [1, 2, 3, 4, 5],       # layers
-        [32, 64, 128],         # hidden dimensions
-        max_num_epochs=200,
+        [2] if quick else [1, 2, 3, 4, 5],    # layers
+        [32] if quick else [32, 64, 128],     # hidden dimensions
+        max_num_epochs=20 if quick else 200,
         batch_size=64,
         start_lr=0.01,
-        num_repetitions=10,
+        num_repetitions=2 if quick else 10,
         all_std=True,
         cv_seed=cv_seed
     )
@@ -95,7 +97,7 @@ def main():
     args = parser.parse_args()
 
     logger = setup_logging('gnn', args.verbose)
-    datasets = validate_datasets(args.datasets)
+    datasets = validate_datasets(args.datasets, download=not args.no_download)
 
     if not datasets:
         logger.error("No valid datasets to process")
@@ -120,7 +122,7 @@ def main():
             result, timed_out, error = run_with_timeout(
                 run_gnn_evaluation,
                 args=(dataset_name, device),
-                kwargs={'cv_seed': CV_SEED},
+                kwargs={'cv_seed': CV_SEED, 'quick': args.quick},
                 timeout_sec=args.timeout
             )
 

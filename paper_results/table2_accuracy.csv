@@ -1,0 +1,13 @@
+Dataset,PaperName,PathBoost,GINE (GNN),Weisfeiler-Lehman subtree kernel,Graphlet kernel,Shortest-path kernel
+AIDS,AIDS,99.33 ± 0.09,96.66 ± 0.15,96.42 ± 0.33,99.04 ± 0.09,99.02 ± 0.11
+BZR,BZR,86.76 ± 0.55,82.51 ± 1.37,86.90 ± 1.20,82.30 ± 0.91,82.30 ± 0.91
+DHFR,DHFR,78.19 ± 0.76,80.03 ± 1.08,81.45 ± 1.22,74.52 ± 0.72,74.43 ± 0.90
+MUTAG,MUTAG,89.11 ± 1.08,82.83 ± 2.18,76.35 ± 2.11,85.32 ± 0.82,85.32 ± 0.82
+PROTEINS_full,PROTEINS_full,79.00 ± 0.51,71.50 ± 1.21,73.06 ± 0.71,time limit,time limit
+PTC_FM,PTC_FM,61.80 ± 0.95,59.55 ± 1.87,62.84 ± 1.74,56.64 ± 1.72,56.64 ± 1.72
+SYNTHETIC,SYNTHETIC,62.27 ± 1.67,48.53 ± 1.86,45.53 ± 2.62,45.73 ± 2.53,45.73 ± 2.53
+Tox21_ARE_evaluation,Tox21_ARE_eval,83.37 ± 0.18,81.95 ± 0.76,81.27 ± 1.33,82.24 ± 0.50,82.54 ± 0.51
+Tox21_ARE_testing,Tox21_ARE_test,79.40 ± 0.85,79.21 ± 1.89,78.06 ± 2.13,80.63 ± 1.24,80.20 ± 1.26
+Tox21_ARE_training,Tox21_ARE_train,84.79 ± 0.06,83.43 ± 1.32,time limit,84.74 ± 0.08,84.74 ± 0.08
+Tox21_MMP_testing,Tox21_MMP_test,85.84 ± 0.89,82.01 ± 2.88,86.31 ± 2.11,82.47 ± 1.53,82.34 ± 1.20
+Tox21_MMP_training,Tox21_MMP_train,85.95 ± 0.18,time limit,91.14 ± 0.19,84.96 ± 0.11,84.99 ± 0.12

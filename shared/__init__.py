@@ -1,6 +1,13 @@
 """Shared utilities for PathBoost, GNN, and Kernel evaluation scripts."""
 
 from .cli import create_argument_parser, validate_datasets
+from .pathboost_import import (
+    import_path_boost,
+    get_classifier,
+    get_regressor,
+    get_path_boost,
+    get_version,
+)
 from .csv_utils import ResultsCSVWriter, get_timestamped_path
 from .timeout import run_with_timeout, TimeoutException
 from .logging_config import setup_logging
@@ -17,12 +24,20 @@ from .constants import (
     KERNEL_METRICS,
     KERNEL_METHODS,
     ALL_DATASETS,
+    PAPER_DATASETS,
+    PAPER_REGRESSION_DATASET,
 )
 
 __all__ = [
     # CLI
     'create_argument_parser',
     'validate_datasets',
+    # PathBoost package import (name differs between releases)
+    'import_path_boost',
+    'get_classifier',
+    'get_regressor',
+    'get_path_boost',
+    'get_version',
     # CSV
     'ResultsCSVWriter',
     'get_timestamped_path',
@@ -44,4 +59,6 @@ __all__ = [
     'KERNEL_METRICS',
     'KERNEL_METHODS',
     'ALL_DATASETS',
+    'PAPER_DATASETS',
+    'PAPER_REGRESSION_DATASET',
 ]

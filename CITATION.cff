@@ -1,0 +1,56 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite the paper below."
+title: "Path-Based Gradient Boosting for Graph-Level Prediction: experiment code"
+abstract: >-
+  Code and results accompanying the paper "Path-Based Gradient Boosting for
+  Graph-Level Prediction". Evaluates PathBoost against graph neural networks
+  and graph kernel baselines on TUDatasets benchmark datasets.
+type: software
+license: MIT
+repository-code: "https://github.com/Claudio-Me/Path_Based_Gradient_Boosting_for_Graph_Based_Prediction"
+authors:
+  - family-names: Meggio
+    given-names: Claudio
+    affiliation: "Department of Mathematics, University of Oslo"
+    email: claudm@math.uio.no
+  - family-names: Pensar
+    given-names: Johan
+    affiliation: "Department of Mathematics, University of Oslo"
+  - family-names: "De Bin"
+    given-names: Riccardo
+    affiliation: "Department of Mathematics, University of Oslo"
+preferred-citation:
+  type: article
+  title: "Path-Based Gradient Boosting for Graph-Level Prediction"
+  authors:
+    - family-names: Meggio
+      given-names: Claudio
+    - family-names: Pensar
+      given-names: Johan
+    - family-names: "De Bin"
+      given-names: Riccardo
+  year: 2026
+references:
+  - type: software
+    title: "path_boost: interpretable machine learning on graph-structured data"
+    repository-code: "https://github.com/Claudio-Me/extended_path_boost"
+    authors:
+      - family-names: Meggio
+        given-names: Claudio
+  - type: conference-paper
+    title: "TUDataset: A collection of benchmark datasets for learning with graphs"
+    year: 2020
+    collection-title: "ICML 2020 Workshop on Graph Representation Learning and Beyond (GRL+ 2020)"
+    authors:
+      - family-names: Morris
+        given-names: Christopher
+      - family-names: Kriege
+        given-names: "Nils M."
+      - family-names: Bause
+        given-names: Franka
+      - family-names: Kersting
+        given-names: Kristian
+      - family-names: Mutzel
+        given-names: Petra
+      - family-names: Neumann
+        given-names: Marion

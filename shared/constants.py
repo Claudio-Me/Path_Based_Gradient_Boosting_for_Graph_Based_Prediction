@@ -41,6 +41,27 @@ KERNEL_METHODS = [
     "WLOA",
 ]
 
+# The 12 balanced binary datasets reported in the paper (Tables 1-3).
+# Note the naming: the paper abbreviates the Tox21 splits as
+# _eval / _test / _train; the TUDatasets names are spelled out in full.
+PAPER_DATASETS = [
+    "AIDS",
+    "BZR",
+    "DHFR",
+    "MUTAG",
+    "PROTEINS_full",
+    "PTC_FM",
+    "SYNTHETIC",
+    "Tox21_ARE_evaluation",
+    "Tox21_ARE_testing",
+    "Tox21_ARE_training",
+    "Tox21_MMP_testing",
+    "Tox21_MMP_training",
+]
+
+# Dataset used for the regression experiment of the paper (Table 4).
+PAPER_REGRESSION_DATASET = "alchemy_full"
+
 # All available datasets (from tudataset)
 ALL_DATASETS = [
     "AIDS", "BZR", "BZR_MD", "COLLAB", "COX2", "COX2_MD", "DD",

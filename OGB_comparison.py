@@ -9,7 +9,9 @@ from torch_geometric.loader import DataLoader
 import numpy as np
 from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
 from sklearn.metrics import average_precision_score
-from extended_path_boost import SequentialPathBoostClassifier
+from shared import get_classifier
+
+SequentialPathBoostClassifier = get_classifier()
 
 from run_pathboost_all_datasets import find_categorical_node_attributes
 from ogb_dataset.OGB_utils.to_networkx import (
