@@ -70,6 +70,12 @@ TABLE4 = {
     "Restricted": {"mae": (0.0184, 0.0000), "r2": (0.6027, 0.0000), "time_s": 946.7},
 }
 
+# Table 2 carries a footnote: where the standard (non-linear) kernel exceeded the
+# 20-hour budget, the value reported is the one obtained with the linear kernel.
+# The audit therefore accepts either variant for the kernel columns and records
+# which one it found.
+LINEAR_FALLBACK_KEYS = {"WL", "GR", "SP"}
+
 # Metric name in the stored CSVs for each Table 2 column.
 CSV_METRIC = {
     "PB": ("pathboost", "accuracy"),
@@ -77,6 +83,12 @@ CSV_METRIC = {
     "WL": ("kernel", "accuracy_WL_subtree"),
     "GR": ("kernel", "accuracy_Graphlet"),
     "SP": ("kernel", "accuracy_Shortest_path"),
+}
+
+CSV_METRIC_LINEAR = {
+    "WL": ("kernel", "accuracy_WL_subtree_linear"),
+    "GR": ("kernel", "accuracy_Graphlet_linear"),
+    "SP": ("kernel", "accuracy_Shortest_path_linear"),
 }
 
 METHOD_LABEL = {

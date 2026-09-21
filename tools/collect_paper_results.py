@@ -25,7 +25,8 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from tools.paper_values import (  # noqa: E402
-    DATASETS, PAPER_LABEL, TABLE2, TABLE3, TABLE4, CSV_METRIC, METHOD_LABEL,
+    DATASETS, PAPER_LABEL, TABLE2, TABLE3, TABLE4, CSV_METRIC, CSV_METRIC_LINEAR,
+    LINEAR_FALLBACK_KEYS, METHOD_LABEL,
 )
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -50,6 +51,12 @@ FILE_GLOB = {
 
 SENTINELS = {"FAILED", "TIMEOUT", ""}
 
+# A stored run matches a published value when it could have been printed as that
+# value: half a unit in the last decimal shown, plus a little slack for binary
+# floating-point representation. Tables 2 and 3 print two decimals, Table 4 four.
+TOL_PERCENT = 0.005 + 1e-9
+TOL_REGRESSION = 0.00005 + 1e-12
+
 # Aggregated tables kept alongside the raw runs. When a raw run file is no
 # longer available, a published value may still be traceable to one of these.
 WIDE_SOURCES = [
@@ -73,10 +80,25 @@ WIDE_STD_COLUMN = {
     "SP": "Shortest-path kernel_std_10",
 }
 
+# Same columns for the linear kernel variants (see LINEAR_FALLBACK_KEYS).
+WIDE_COLUMN_LINEAR = {
+    "WL": "Weisfeiler-Lehman subtree kernel linear_accuracy",
+    "GR": "Graphlet kernel linear_accuracy",
+    "SP": "Shortest-path kernel linear_accuracy",
+}
+WIDE_STD_COLUMN_LINEAR = {
+    "WL": "Weisfeiler-Lehman subtree kernel linear_std_10",
+    "GR": "Graphlet kernel linear_std_10",
+    "SP": "Shortest-path kernel linear_std_10",
+}
 
-def find_match_wide(key, dataset, want_mean, want_std, tol=0.005):
+
+def find_match_wide(key, dataset, want_mean, want_std, tol=TOL_PERCENT, linear=False):
     """Look the value up in an aggregated table; return (path, mean, std) or None."""
-    col, std_col = WIDE_COLUMN.get(key), WIDE_STD_COLUMN.get(key)
+    if linear:
+        col, std_col = WIDE_COLUMN_LINEAR.get(key), WIDE_STD_COLUMN_LINEAR.get(key)
+    else:
+        col, std_col = WIDE_COLUMN.get(key), WIDE_STD_COLUMN.get(key)
     if col is None:
         return None
     for rel in WIDE_SOURCES:
@@ -144,7 +166,7 @@ def load_rows(method, extra_dirs):
                 print(f"  ! unreadable: {path} ({exc})", file=sys.stderr)
 
 
-def find_match(method, dataset, metric, want_mean, want_std, extra_dirs, tol=0.005):
+def find_match(method, dataset, metric, want_mean, want_std, extra_dirs, tol=TOL_PERCENT):
     """Return (path, mean, std) of a run reproducing the published value, else None."""
     fallback = None
     for path, row in load_rows(method, extra_dirs):
@@ -182,19 +204,33 @@ def trace_table(table, metric_of, extra_dirs, label):
             total += 1
             want_mean, want_std = published
             method, metric = metric_of(key)
+            def is_exact(h):
+                return h is not None and h[2] is not None and abs(h[2] - want_std) <= TOL_PERCENT
+
             hit = find_match(method, dataset, metric, want_mean, want_std, extra_dirs)
-            exact_hit = hit is not None and hit[2] is not None and abs(hit[2] - want_std) <= 0.005
-            if not exact_hit and label == "Table 2":
+            variant = ""
+            if not is_exact(hit) and label == "Table 2":
                 # Fall back to the aggregated tables kept in results_csv_files/
                 hit = find_match_wide(key, dataset, want_mean, want_std) or hit
+            if not is_exact(hit) and key in LINEAR_FALLBACK_KEYS:
+                # Table 2's footnote: where the standard kernel exceeded the time
+                # budget, the reported value comes from the linear variant.
+                lin_method, lin_metric = CSV_METRIC_LINEAR[key]
+                lin = find_match(lin_method, dataset, lin_metric, want_mean, want_std,
+                                 extra_dirs)
+                if not is_exact(lin) and label == "Table 2":
+                    lin = find_match_wide(key, dataset, want_mean, want_std,
+                                          linear=True) or lin
+                if is_exact(lin):
+                    hit, variant = lin, " (linear kernel)"
             if hit is None:
                 status, src, sm, ss = "NOT TRACED", "", "", ""
             else:
                 path, mean, std = hit
                 src = os.path.relpath(path, ROOT)
                 sm, ss = f"{mean:.2f}", "" if std is None else f"{std:.2f}"
-                exact = std is not None and abs(std - want_std) <= 0.005
-                status = "traced" if exact else "mean only"
+                exact = std is not None and abs(std - want_std) <= TOL_PERCENT
+                status = ("traced" + variant) if exact else "mean only"
                 if exact:
                     traced += 1
             rows.append({
@@ -208,7 +244,7 @@ def trace_table(table, metric_of, extra_dirs, label):
     return rows, traced, total
 
 
-def trace_regression(extra_dirs, tol=0.0005):
+def trace_regression(extra_dirs, tol=TOL_REGRESSION):
     """Check Table 4 (alchemy_full, target 0): 'full' vs 'categorical_only'."""
     variant_suffix = {"Complete": "_full", "Restricted": "_categorical_only"}
     rows, traced, total = [], 0, 0

@@ -2,7 +2,7 @@ Table,Dataset,PaperName,Method,Published_Mean,Published_Std,Stored_Mean,Stored_S
 Table 2,AIDS,AIDS,PathBoost,99.33,0.09,,,,NOT TRACED
 Table 2,AIDS,AIDS,GINE (GNN),96.66,0.15,96.66,0.15,paper_results/raw/GNN_Performance_20260225_190031.csv,traced
 Table 2,AIDS,AIDS,Weisfeiler-Lehman subtree kernel,96.42,0.33,96.42,0.33,paper_results/raw/merged_results_enriched_and_modified.csv,traced
-Table 2,AIDS,AIDS,Graphlet kernel,99.04,0.09,,,,NOT TRACED
+Table 2,AIDS,AIDS,Graphlet kernel,99.04,0.09,99.03,0.09,paper_results/raw/merged_results_enriched_and_modified.csv,traced
 Table 2,AIDS,AIDS,Shortest-path kernel,99.02,0.11,99.02,0.11,paper_results/raw/merged_results_enriched_and_modified.csv,traced
 Table 2,BZR,BZR,PathBoost,86.76,0.55,,,,NOT TRACED
 Table 2,BZR,BZR,GINE (GNN),82.51,1.37,,,,NOT TRACED
@@ -47,8 +47,8 @@ Table 2,Tox21_ARE_testing,Tox21_ARE_test,Shortest-path kernel,80.20,1.26,80.20,1
 Table 2,Tox21_ARE_training,Tox21_ARE_train,PathBoost,84.79,0.06,,,,NOT TRACED
 Table 2,Tox21_ARE_training,Tox21_ARE_train,GINE (GNN),83.43,1.32,,,,NOT TRACED
 Table 2,Tox21_ARE_training,Tox21_ARE_train,Weisfeiler-Lehman subtree kernel,time limit,,,,,time limit
-Table 2,Tox21_ARE_training,Tox21_ARE_train,Graphlet kernel,84.74,0.08,,,,NOT TRACED
-Table 2,Tox21_ARE_training,Tox21_ARE_train,Shortest-path kernel,84.74,0.08,,,,NOT TRACED
+Table 2,Tox21_ARE_training,Tox21_ARE_train,Graphlet kernel,84.74,0.08,84.74,0.08,paper_results/raw/merged_results_enriched_and_modified.csv,traced (linear kernel)
+Table 2,Tox21_ARE_training,Tox21_ARE_train,Shortest-path kernel,84.74,0.08,84.74,0.08,paper_results/raw/merged_results_enriched_and_modified.csv,traced (linear kernel)
 Table 2,Tox21_MMP_testing,Tox21_MMP_test,PathBoost,85.84,0.89,,,,NOT TRACED
 Table 2,Tox21_MMP_testing,Tox21_MMP_test,GINE (GNN),82.01,2.88,,,,NOT TRACED
 Table 2,Tox21_MMP_testing,Tox21_MMP_test,Weisfeiler-Lehman subtree kernel,86.31,2.11,86.31,2.11,paper_results/raw/merged_results_enriched_and_modified.csv,traced
@@ -57,8 +57,8 @@ Table 2,Tox21_MMP_testing,Tox21_MMP_test,Shortest-path kernel,82.34,1.20,82.34,1
 Table 2,Tox21_MMP_training,Tox21_MMP_train,PathBoost,85.95,0.18,,,,NOT TRACED
 Table 2,Tox21_MMP_training,Tox21_MMP_train,GINE (GNN),time limit,,,,,time limit
 Table 2,Tox21_MMP_training,Tox21_MMP_train,Weisfeiler-Lehman subtree kernel,91.14,0.19,91.14,0.19,paper_results/raw/merged_results_enriched_and_modified.csv,traced
-Table 2,Tox21_MMP_training,Tox21_MMP_train,Graphlet kernel,84.96,0.11,,,,NOT TRACED
-Table 2,Tox21_MMP_training,Tox21_MMP_train,Shortest-path kernel,84.99,0.12,,,,NOT TRACED
+Table 2,Tox21_MMP_training,Tox21_MMP_train,Graphlet kernel,84.96,0.11,84.96,0.11,paper_results/raw/merged_results_enriched_and_modified.csv,traced (linear kernel)
+Table 2,Tox21_MMP_training,Tox21_MMP_train,Shortest-path kernel,84.99,0.12,84.99,0.12,paper_results/raw/merged_results_enriched_and_modified.csv,traced (linear kernel)
 Table 3,AIDS,AIDS,PathBoost,98.69,0.12,,,,NOT TRACED
 Table 3,AIDS,AIDS,GINE (GNN),time limit,,,,,time limit
 Table 3,BZR,BZR,PathBoost,70.81,1.81,,,,NOT TRACED

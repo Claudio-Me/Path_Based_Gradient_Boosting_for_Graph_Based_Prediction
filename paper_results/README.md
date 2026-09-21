@@ -28,19 +28,42 @@ near-matching run.
 
 `provenance.csv` carries one row per published value with a `Status` column:
 
-- **traced** — a stored run reproduces both the mean and the standard deviation.
+- **traced** — a stored run reproduces both the mean and the standard deviation,
+  to the precision at which the value was printed.
+- **traced (linear kernel)** — likewise, from the linear kernel variant. Table 2
+  footnotes that where the standard kernel exceeded the time budget, the value
+  reported is the linear one; these four cells are those.
 - **mean only** — the mean matches but the stored standard deviation differs.
 - **time limit** — the paper reports no value (the 20-hour budget was exceeded).
 - **NOT TRACED** — no stored run reproduces the value in the directories searched.
 
-The classification and regression experiments were executed on the university
-compute servers (see §3.6 of the paper). The per-run CSVs for the graph-kernel
-baselines are archived here; the PathBoost and GINE runs behind Tables 2-4 were
-produced on those servers and are being restored from them. Re-run the collector
-with the synced directory to complete the audit:
+Current state:
+
+| Table | traced | of |
+|---|---:|---:|
+| Table 2 (accuracy) | 34 | 56 |
+| Table 3 (F1-macro) | 0 | 20 |
+| Table 4 (regression) | 0 | 4 |
+
+Every graph-kernel value of Table 2 is accounted for. What is outstanding is the
+PathBoost and GINE runs: those were executed on the university compute servers
+(see §3.6 of the paper) and the per-run CSVs have not been copied back. There are
+two ways to close the gap.
+
+**Recover the original runs** — the only route to the published values exactly:
 
 ```bash
-python tools/collect_paper_results.py --extra-dir /path/to/synced/results --write
+rsync -avz <user>@<server>:<path>/PathBoost_results/ ./PathBoost_results/
+rsync -avz <user>@<server>:<path>/GNN_results/       ./GNN_results/
+python tools/collect_paper_results.py --write
+```
+
+**Recompute them** — corroboration rather than recovery, since library versions
+have moved on since the runs:
+
+```bash
+python tools/run_missing.py              # show what would run
+python tools/run_missing.py --execute    # run it (days; prefer a cluster)
 ```
 
 ## Note on Table 1

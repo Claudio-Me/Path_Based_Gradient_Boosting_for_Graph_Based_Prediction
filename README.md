@@ -408,6 +408,19 @@ the precision at which it was printed, and reports anything it cannot find rathe
 substituting the closest available run. See `paper_results/README.md` for the current
 status of that audit.
 
+If some values are unaccounted for, `tools/run_missing.py` turns the report into the
+minimal set of commands that would regenerate exactly those, and can run them:
+
+```bash
+python tools/run_missing.py                        # show the plan, run nothing
+python tools/run_missing.py --execute -j 7         # run it
+python tools/run_missing.py --extra-dir /synced    # re-check against synced results first
+```
+
+Note that this recomputes rather than recovers: the splits are seeded, but library
+versions have moved on since the paper, so new numbers land near the published ones
+rather than on them.
+
 The analysis notebook `results_csv_files/analysis_csv_results.ipynb` turns the raw result
 CSVs into the comparison tables, win/loss summaries and charts.
 
@@ -425,6 +438,7 @@ CSVs into the comparison tables, win/loss summaries and charts.
 ├── reproduce_paper.sh                   # one entry point for all of the above
 ├── build_kernels.sh                     # compile the C++ graph kernels
 ├── tools/collect_paper_results.py       # rebuild + audit paper_results/
+├── tools/run_missing.py                 # re-run only the experiments the audit lacks
 ├── paper_results/                       # published numbers and their provenance
 ├── shared/                              # CLI, constants, CSV writer, timeout, imports
 ├── utils.py                             # dataset loading, caching, label preprocessing
