@@ -34,11 +34,12 @@ algorithm itself lives in a separate package:
 9. [Hyperparameters](#hyperparameters)
 10. [Computing environment](#computing-environment)
 11. [Output format](#output-format)
-12. [Published results](#published-results)
-13. [Repository layout](#repository-layout)
-14. [Running on a cluster](#running-on-a-cluster)
-15. [Troubleshooting](#troubleshooting)
-16. [License and citation](#license-and-citation)
+12. [Results and their provenance](#results-and-their-provenance)
+13. [Known discrepancies](#known-discrepancies)
+14. [Repository layout](#repository-layout)
+15. [Running on a cluster](#running-on-a-cluster)
+16. [Troubleshooting](#troubleshooting)
+17. [License and citation](#license-and-citation)
 
 ---
 
@@ -86,6 +87,8 @@ cross-validation over the complete grid. For the published numbers see
 | Figure 1 — learning curve on PROTEINS_full | `./reproduce_paper.sh figure1` | `subsample_dataset/PROTEINS_full_results.json` + `.png` |
 | Table S2 — linear-kernel variants | part of `classification` (the `*_linear` kernels) | `Kernel_results/` |
 | Published tables, without retraining | `./reproduce_paper.sh tables` | `paper_results/` |
+| Audit: which published values are backed by a stored run | `python tools/collect_paper_results.py` | report + `paper_results/provenance.csv` |
+| Re-run only what the audit lacks | `python tools/run_missing.py` | report, `--execute` to run |
 
 Every target accepts `--dry-run` to print the commands it would execute:
 
@@ -360,8 +363,24 @@ The published experiments ran on a Linux server with two Intel Xeon Gold 6226R C
 (2.90 GHz, 16 cores each) and NVIDIA A10 GPUs, under Red Hat Enterprise Linux 8.10.
 PathBoost and the graph kernels are CPU-only; GINE used a single GPU.
 
-`requirements-lock.txt` records the exact package versions. Because the machine was shared,
-the wall-clock times reported in the paper are indicative rather than benchmark-grade.
+Because the machine was shared, the wall-clock times reported in the paper are indicative
+rather than benchmark-grade.
+
+**Package versions.** §3.6 of the paper states Python 3.11, PyTorch 2.1, PyTorch Geometric
+2.5 and CUDA 12.8. The environment captured in `requirements-lock.txt` — the one in which
+this repository is currently exercised — is:
+
+| | paper §3.6 | `requirements-lock.txt` |
+|---|---|---|
+| Python | 3.11 | 3.12.6 |
+| PyTorch | 2.1 | 2.8.0 |
+| PyTorch Geometric | 2.5 | 2.6.1 |
+| scikit-learn | not stated | 1.7.1 |
+| NetworkX | not stated | 3.5 |
+| NumPy | not stated | 2.4.1 |
+
+Treat `requirements-lock.txt` as authoritative for reproducing the code as it stands; see
+[Known discrepancies](#known-discrepancies).
 
 Results are not expected to be bit-identical across machines: the cross-validation splits
 are seeded and deterministic, but GPU kernels, BLAS threading and library versions
@@ -392,37 +411,165 @@ column, and the sweep moves on to the next dataset.
 Note the scale: PathBoost and GNN store accuracies as fractions (`0.8911`), the C++ kernels
 as percentages (`89.11`).
 
-## Published results
+## Results and their provenance
 
 `paper_results/` holds the numbers reported in the paper together with the runs they came
-from, so the tables can be inspected without re-running anything. It is built — and
-audited — by:
+from, so the tables can be inspected without re-running anything.
+
+| File | Paper artifact |
+|---|---|
+| `table1_dataset_characteristics.csv` | Table 1 |
+| `table2_accuracy.csv` | Table 2 |
+| `table3_f1_macro.csv` | Table 3 |
+| `table4_regression.csv` | Table 4 |
+| `figure1_proteins_full_subsample.json` | Figure 1 |
+| `provenance.csv` | one row per published value: where it came from |
+| `raw/` | the run files the values were traced to |
+
+### Auditing it
+
+The directory is built — and checked — by one script:
 
 ```bash
 python tools/collect_paper_results.py            # report only
 python tools/collect_paper_results.py --write    # rebuild paper_results/
 ```
 
-The script searches the stored result CSVs for a run reproducing each published value to
-the precision at which it was printed, and reports anything it cannot find rather than
-substituting the closest available run. See `paper_results/README.md` for the current
-status of that audit.
+For every value printed in Tables 2-4 the script searches the stored result CSVs for a run
+that reproduces it **to the precision at which it was published** (half a unit in the last
+decimal shown). It never substitutes the closest available run: a value with no matching
+run is reported as a gap. The exit status is non-zero while any gap remains, so the script
+doubles as a check that the repository carries its own evidence.
 
-If some values are unaccounted for, `tools/run_missing.py` turns the report into the
-minimal set of commands that would regenerate exactly those, and can run them:
+`provenance.csv` records the outcome per value:
+
+| `Status` | meaning |
+|---|---|
+| `traced` | a stored run reproduces both the mean and the standard deviation |
+| `traced (linear kernel)` | likewise, from the linear kernel variant — see below |
+| `mean only` | the mean matches, the stored standard deviation does not |
+| `time limit` | the paper reports no value; the 20-hour budget was exceeded |
+| `NOT TRACED` | no stored run in the searched directories reproduces the value |
+
+**On `traced (linear kernel)`.** Table 2 carries a footnote: where the standard
+(non-linear) kernel exceeded the time budget, the value reported is the one obtained with
+the linear kernel. Four cells are of that kind, and the audit finds them in the linear
+columns rather than the non-linear ones. It labels them accordingly instead of passing
+them off as standard-kernel results:
+
+| | published | stored (linear variant) |
+|---|---|---|
+| Tox21_ARE_train, Graphlet | 84.74 ± 0.08 | 84.74 ± 0.08 |
+| Tox21_ARE_train, Shortest-path | 84.74 ± 0.08 | 84.74 ± 0.08 |
+| Tox21_MMP_train, Graphlet | 84.96 ± 0.11 | 84.96 ± 0.11 |
+| Tox21_MMP_train, Shortest-path | 84.99 ± 0.12 | 84.99 ± 0.12 |
+
+### Current state of the audit
+
+```
+Table 2 (accuracy)        34/56  traced
+Table 3 (F1-macro)         0/20  traced
+Table 4 (regression)       0/4   traced
+```
+
+**Every graph-kernel value in Table 2 is accounted for.** What is outstanding is the
+PathBoost and GINE runs behind Tables 2-4, and the alchemy_full regression of Table 4.
+Those experiments were executed on the university compute servers (§3.6 of the paper) and
+their per-run CSVs have not been copied back into this repository. That is a gap in the
+archive, not a gap in the experiments, and it is stated here rather than papered over.
+
+Run `python tools/collect_paper_results.py` at any time for the live figure; it is
+regenerated from the committed evidence in `paper_results/raw/`, so a clean clone gives
+the same answer.
+
+### Closing the gap
+
+There are two routes, and they are not equivalent.
+
+**1. Recover the original runs.** The only route to the published values themselves. Copy
+the result CSVs back from the compute server and re-run the collector:
+
+```bash
+rsync -avz <user>@<server>:<path>/PathBoost_results/ ./PathBoost_results/
+rsync -avz <user>@<server>:<path>/GNN_results/       ./GNN_results/
+python tools/collect_paper_results.py --write
+```
+
+Any directory can also be checked without copying it into place:
+
+```bash
+python tools/collect_paper_results.py --extra-dir /path/to/synced/results --write
+```
+
+**2. Recompute them.** `tools/run_missing.py` reads the audit and emits the minimal set of
+commands that would regenerate exactly the values no stored run accounts for:
 
 ```bash
 python tools/run_missing.py                        # show the plan, run nothing
-python tools/run_missing.py --execute -j 7         # run it
-python tools/run_missing.py --extra-dir /synced    # re-check against synced results first
+python tools/run_missing.py --execute              # run it
+python tools/run_missing.py --execute -j 7         # spread datasets over cores
+python tools/run_missing.py --method gnn           # one method only
+python tools/run_missing.py --extra-dir /synced    # discount already-synced results first
 ```
 
-Note that this recomputes rather than recovers: the splits are seeded, but library
-versions have moved on since the paper, so new numbers land near the published ones
-rather than on them.
+With `-j` it rewrites the two long sweeps as `run_parallel.sh` invocations. As of writing
+it proposes PathBoost on 12 datasets, GINE on 10, and the alchemy_full regression.
 
-The analysis notebook `results_csv_files/analysis_csv_results.ipynb` turns the raw result
-CSVs into the comparison tables, win/loss summaries and charts.
+**Recomputing corroborates the published numbers; it does not recover them.** The
+cross-validation splits are seeded and deterministic, but the libraries have moved on
+since the paper was written — in particular `path_boost` 2.1.0 contains a bug fix
+(commit `569cbe8`, "preserve dataset shape when no paths yield columns") made after those
+runs. New numbers will land near the published ones rather than on them, and a difference
+beyond cross-validation noise is a finding to report, not a discrepancy to absorb. Budget
+days of compute, and prefer a cluster.
+
+### Analysis notebooks
+
+`results_csv_files/results_from_raw_csvs.ipynb` reads the raw result CSVs directly and is
+the aggregation used for the comparison tables; it keeps the latest run per
+(dataset, metric), identifying runs by their timestamped filename.
+`results_csv_files/analysis_csv_results.ipynb` adds win/loss summaries, correlation
+analysis and charts.
+
+## Known discrepancies
+
+Points where this repository and the manuscript do not agree. They are listed so a reader
+does not have to discover them, and none of them changes a conclusion of the paper.
+
+**1. Package versions in §3.6.** The paper states Python 3.11 / PyTorch 2.1 / PyTorch
+Geometric 2.5; the working environment is 3.12 / 2.8 / 2.6.1. See
+[Computing environment](#computing-environment) for the full table.
+
+**2. Three graph counts in Table 1.** `dataset_analysis.py`, run against the datasets as
+downloaded from TUDatasets today, recomputes three of the twelve counts differently:
+
+| Dataset | Table 1 | recomputed |
+|---|---:|---:|
+| Tox21_ARE_eval | 970 | 552 |
+| Tox21_ARE_train | 5670 | 7167 |
+| Tox21_MMP_train | 5418 | 7320 |
+
+Every other column of Table 1 — average nodes and edges, feature counts, class balance,
+number of categorical attribute classes — agrees exactly, for all twelve datasets.
+`paper_results/table1_dataset_characteristics.csv` carries both figures side by side
+(`Graphs_paper` and `Graphs_recomputed`) rather than reconciling them silently.
+
+**3. The Figure 1 caption.** It describes the PathBoost-over-GNN gap on PROTEINS_full as
+"approximately 6-8 percentage points". The stored results
+(`paper_results/figure1_proteins_full_subsample.json`) give a gap ranging from 7.1 to 10.5
+points across the ten training-set sizes, averaging 9.2. The qualitative claim — a
+consistent advantage that does not narrow with more training data — holds.
+
+**4. Dataset naming.** Table 1 abbreviates the Tox21 splits as `_eval`, `_test` and
+`_train`; the TUDatasets names are `_evaluation`, `_testing` and `_training`. Use the
+latter on the command line. The mapping is in
+[Datasets used in the paper](#datasets-used-in-the-paper).
+
+**5. The PathBoost package was renamed.** The experiments were originally run against
+`extended_path_boost` 1.6, installed from a local directory and never published. The
+public release is `path_boost` 2.1.0 — same estimators, renamed module, plus the bug fix
+noted above. `requirements.txt` pins the public release and the scripts accept either
+module name.
 
 ## Repository layout
 
